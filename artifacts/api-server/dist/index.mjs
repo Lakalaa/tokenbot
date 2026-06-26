@@ -48711,6 +48711,10 @@ app_default.listen(port, async (err) => {
     process.exit(1);
   }
   logger.info({ port }, "Server listening");
+  if (process.env["BOT_DISABLED"] === "true") {
+    logger.info("BOT_DISABLED=true \u2014 bot will not start on this instance");
+    return;
+  }
   const bot = createBot();
   const webhookUrl = process.env["WEBHOOK_URL"];
   if (webhookUrl) {
