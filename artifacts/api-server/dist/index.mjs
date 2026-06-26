@@ -48721,6 +48721,7 @@ app_default.listen(port, async (err) => {
     });
     logger.info({ url: `${webhookUrl}${path}` }, "Telegram bot started (webhook)");
   } else {
+    await bot.api.deleteWebhook({ drop_pending_updates: true });
     bot.start({
       allowed_updates: ["message"],
       onStart: (info) => {
