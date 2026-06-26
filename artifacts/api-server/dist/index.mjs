@@ -38900,6 +38900,9 @@ var require_follow_redirects = __commonJS({
   }
 });
 
+// src/index.ts
+import { webhookCallback } from "grammy";
+
 // src/app.ts
 var import_express3 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
@@ -48331,7 +48334,7 @@ function parseKV(args) {
   }
   return out;
 }
-function startBot() {
+function createBot() {
   const token = process.env["TELEGRAM_BOT_TOKEN"];
   if (!token) {
     logger.warn("TELEGRAM_BOT_TOKEN not set \u2014 bot will not start");
@@ -48690,34 +48693,42 @@ Paste a contract address like:
       logger.error({ err: err.error }, "Unknown bot error");
     }
   });
-  bot.start({
-    allowed_updates: ["message"],
-    onStart: (info) => {
-      logger.info({ username: info.username }, "Telegram bot started");
-    }
-  });
   return bot;
 }
 
 // src/index.ts
 var rawPort = process.env["PORT"];
 if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided."
-  );
+  throw new Error("PORT environment variable is required but was not provided.");
 }
 var port = Number(rawPort);
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
-app_default.listen(port, (err) => {
+app_default.listen(port, async (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");
     process.exit(1);
   }
   logger.info({ port }, "Server listening");
+  const bot = createBot();
+  const webhookUrl = process.env["WEBHOOK_URL"];
+  if (webhookUrl) {
+    const path = "/bot/webhook";
+    app_default.post(path, webhookCallback(bot, "express"));
+    await bot.api.setWebhook(`${webhookUrl}${path}`, {
+      drop_pending_updates: true
+    });
+    logger.info({ url: `${webhookUrl}${path}` }, "Telegram bot started (webhook)");
+  } else {
+    bot.start({
+      allowed_updates: ["message"],
+      onStart: (info) => {
+        logger.info({ username: info.username }, "Telegram bot started (polling)");
+      }
+    });
+  }
 });
-startBot();
 /*! Bundled license information:
 
 depd/index.js:

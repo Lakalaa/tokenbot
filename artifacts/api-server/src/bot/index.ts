@@ -49,7 +49,6 @@ async function isAdmin(ctx: Context, userId: number): Promise<boolean> {
 
 function parseKV(args: string): Record<string, string> {
   const out: Record<string, string> = {};
-  // split on spaces but preserve URLs — match key:value pairs
   const re = /(\w+):(https?:\/\/\S+|\S+)/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(args)) !== null) {
@@ -58,7 +57,7 @@ function parseKV(args: string): Record<string, string> {
   return out;
 }
 
-export function startBot(): Bot {
+export function createBot(): Bot {
   const token = process.env["TELEGRAM_BOT_TOKEN"];
   if (!token) {
     logger.warn("TELEGRAM_BOT_TOKEN not set — bot will not start");
@@ -73,13 +72,11 @@ export function startBot(): Bot {
   initScheduler(bot.api);
   initChainMonitor(bot.api);
 
-  // Restore any saved monitors from previous run
   const saved = getAllStakeConfigs().filter((c) => c.config.monitor);
   if (saved.length > 0) {
     restoreMonitors(saved.map((c) => ({ chatId: c.chatId, monitor: c.config.monitor! })));
   }
 
-  // ── /start ────────────────────────────────────────────────────────────────
   bot.command("start", async (ctx) => {
     await ctx.reply(formatStartMessage(), {
       parse_mode: "HTML",
@@ -87,12 +84,10 @@ export function startBot(): Bot {
     });
   });
 
-  // ── /help ─────────────────────────────────────────────────────────────────
   bot.command("help", async (ctx) => {
     await ctx.reply(formatHelpMessage(), { parse_mode: "HTML" });
   });
 
-  // ── Custom link commands ──────────────────────────────────────────────────
   bot.command("setlink", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId || !(await isAdmin(ctx, userId))) {
@@ -156,7 +151,6 @@ export function startBot(): Bot {
     await ctx.reply(`${e("greenCircle")} All custom links cleared.`, { parse_mode: "HTML" });
   });
 
-  // ── Recurring announcement commands ───────────────────────────────────────
   bot.command("setannounce", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId || !(await isAdmin(ctx, userId))) {
@@ -209,7 +203,6 @@ export function startBot(): Bot {
     );
   });
 
-  // ── Stake setup (with on-chain monitoring) ────────────────────────────────
   bot.command("setupstake", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId || !(await isAdmin(ctx, userId))) {
@@ -250,7 +243,6 @@ export function startBot(): Bot {
     if (kv["stakeurl"]) stakeUpdate.stakeUrl = kv["stakeurl"];
     if (kv["explorerurl"]) stakeUpdate.explorerUrl = kv["explorerurl"];
 
-    // On-chain monitor config
     if (kv["chain"] || kv["stakingcontract"] || kv["tokencontract"]) {
       const existing = getStakeConfig(chatId);
       const chain = kv["chain"] ?? existing?.monitor?.chain ?? "";
@@ -282,7 +274,6 @@ export function startBot(): Bot {
 
     const saved = setStakeConfig(chatId, stakeUpdate);
 
-    // Start or restart monitoring if config is present
     if (saved.monitor) {
       startMonitoring(chatId, saved.monitor);
     }
@@ -316,7 +307,6 @@ export function startBot(): Bot {
       return;
     }
     stopMonitoring(chatId);
-    // Clear the monitor config from stored config too
     const cfg = getStakeConfig(chatId);
     if (cfg) {
       delete cfg.monitor;
@@ -347,7 +337,6 @@ export function startBot(): Bot {
     );
   });
 
-  // ── Manual stake alert ─────────────────────────────────────────────────────
   bot.command("newstake", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId || !(await isAdmin(ctx, userId))) {
@@ -382,7 +371,6 @@ export function startBot(): Bot {
     });
   });
 
-  // ── Token lookup ──────────────────────────────────────────────────────────
   bot.on("message:text", async (ctx) => {
     const text = ctx.message.text;
     if (text.startsWith("/")) return;
@@ -448,13 +436,6 @@ export function startBot(): Bot {
     } else {
       logger.error({ err: err.error }, "Unknown bot error");
     }
-  });
-
-  bot.start({
-    allowed_updates: ["message"],
-    onStart: (info) => {
-      logger.info({ username: info.username }, "Telegram bot started");
-    },
   });
 
   return bot;
