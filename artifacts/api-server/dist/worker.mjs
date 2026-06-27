@@ -22615,6 +22615,36 @@ async function main() {
   logger.info("Starting Telegram bot worker...");
   const bot = createBot();
   await bot.api.deleteWebhook({ drop_pending_updates: true });
+  await bot.api.setMyCommands(
+    [
+      { command: "start", description: "Welcome message" },
+      { command: "help", description: "Show all commands" }
+    ],
+    { scope: { type: "all_private_chats" } }
+  );
+  await bot.api.setMyCommands(
+    [
+      { command: "help", description: "Show all commands" },
+      { command: "newstake", description: "Post a new stake alert \u2014 /newstake 500000 180" },
+      { command: "stakestatus", description: "Show stake config & monitor status" },
+      { command: "setbanner", description: "Set stake alert banner (reply to an image)" },
+      { command: "removebanner", description: "Remove stake alert banner" },
+      { command: "setupstake", description: "Configure staking alerts" },
+      { command: "stopmonitor", description: "Stop on-chain stake monitoring" },
+      { command: "setupbuy", description: "Configure buy alerts" },
+      { command: "stopbuy", description: "Stop buy alerts" },
+      { command: "buystatus", description: "Show buy alert status" },
+      { command: "setlink", description: "Add a custom link \u2014 /setlink Text https://url" },
+      { command: "listlinks", description: "List custom links" },
+      { command: "removelink", description: "Remove a link \u2014 /removelink 1" },
+      { command: "clearlinks", description: "Remove all custom links" },
+      { command: "setannounce", description: "Recurring message \u2014 /setannounce 30 Your text" },
+      { command: "showannounce", description: "Show active announcement" },
+      { command: "stopannounce", description: "Stop recurring announcement" }
+    ],
+    { scope: { type: "all_chat_administrators" } }
+  );
+  logger.info("Bot commands registered");
   bot.start({
     allowed_updates: ["message"],
     onStart: (info) => {
