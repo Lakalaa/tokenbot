@@ -22,6 +22,7 @@ async function main() {
       { command: "newstake",    description: "Post stake alert — /newstake 500000 180" },
       { command: "setupstake",  description: "Configure token, supply, links" },
       { command: "setbanner",   description: "Reply to image to set stake banner" },
+      { command: "setstakelink", description: "Set Stake button link — /setstakelink https://..." },
       { command: "setemoji",    description: "Set stake emoji — /setemoji 🔥" },
       { command: "setupbuy",    description: "Start buy alerts — /setupbuy contract:0x... chain:ethereum" },
       { command: "setlink",     description: "Add button link — /setlink Text https://url" },

@@ -48912,6 +48912,32 @@ Example: <code>/newstake 500000 180</code>`,
     const updated = addStakeAmount(chatId, amount) ?? config;
     await sendStakeAlert(bot.api, chatId, amount, lockDays, updated);
   });
+  bot.command("setstakelink", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !await isAdmin(ctx, userId)) {
+      await ctx.reply(`${e("warning")} Only admins can set the stake link.`, { parse_mode: "HTML" });
+      return;
+    }
+    const url2 = ctx.match?.trim() ?? "";
+    if (!url2 || !url2.startsWith("http")) {
+      await ctx.reply(
+        `${e("info")} <b>Usage:</b> <code>/setstakelink https://stake.yoursite.com</code>
+
+This sets the link behind the <b>Stake $TOKEN</b> button on stake alerts.`,
+        { parse_mode: "HTML" }
+      );
+      return;
+    }
+    const chatId = ctx.chat.id;
+    setStakeConfig(chatId, { stakeUrl: url2 });
+    await ctx.reply(
+      `${e("greenCircle")} Stake link set!
+
+The <b>Stake $TOKEN</b> button will now link to:
+${url2}`,
+      { parse_mode: "HTML", link_preview_options: { is_disabled: true } }
+    );
+  });
   bot.command("setemoji", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId || !await isAdmin(ctx, userId)) {
