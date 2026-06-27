@@ -11,7 +11,7 @@ import {
   getStakeConfig,
   setStakeConfig,
   addStakeAmount,
-  formatStakeAlert,
+  sendStakeAlert,
 } from "./stakeConfig.js";
 import {
   initChainMonitor,
@@ -263,6 +263,7 @@ export function createBot(): Bot {
     if (kv["totalstaked"]) stakeUpdate.totalStaked = parseFloat(kv["totalstaked"].replace(/,/g, ""));
     if (kv["stakeurl"]) stakeUpdate.stakeUrl = kv["stakeurl"];
     if (kv["explorerurl"]) stakeUpdate.explorerUrl = kv["explorerurl"];
+    if (kv["bannerurl"]) stakeUpdate.bannerUrl = kv["bannerurl"];
 
     if (kv["chain"] || kv["stakingcontract"] || kv["tokencontract"]) {
       const existing = getStakeConfig(chatId);
@@ -385,11 +386,7 @@ export function createBot(): Bot {
       return;
     }
     const updated = addStakeAmount(chatId, amount) ?? config;
-    const msg = formatStakeAlert(amount, config.symbol.toUpperCase(), lockDays, updated);
-    await ctx.reply(msg, {
-      parse_mode: "HTML",
-      link_preview_options: { is_disabled: true },
-    });
+    await sendStakeAlert(bot.api, chatId, amount, lockDays, updated);
   });
 
   bot.command("setupbuy", async (ctx) => {

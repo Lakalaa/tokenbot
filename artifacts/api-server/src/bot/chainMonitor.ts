@@ -1,7 +1,7 @@
 import axios from "axios";
 import { logger } from "../lib/logger.js";
 import type { Api } from "grammy";
-import { getStakeConfig, formatStakeAlert } from "./stakeConfig.js";
+import { getStakeConfig, setStakeConfig, sendStakeAlert } from "./stakeConfig.js";
 import type { StakeMonitorConfig } from "./stakeConfig.js";
 
 // Public RPC endpoints — no API key needed
@@ -116,15 +116,12 @@ async function pollGroup(chatId: number, monitor: StakeMonitorConfig): Promise<v
         stakeConfig.totalStaked = (stakeConfig.totalStaked ?? 0) + amount;
       }
 
-      const symbol = stakeConfig?.symbol ?? monitor.symbol ?? "TOKEN";
-      const msg = formatStakeAlert(amount, symbol, 0, stakeConfig ?? null, true);
+      // Persist updated total
+      if (stakeConfig) setStakeConfig(chatId, { totalStaked: stakeConfig.totalStaked });
 
       try {
-        await _api.sendMessage(chatId, msg, {
-          parse_mode: "HTML",
-          link_preview_options: { is_disabled: true },
-        });
-        logger.info({ chatId, amount, symbol, tx: log.transactionHash }, "Stake alert sent");
+        await sendStakeAlert(_api, chatId, amount, 0, stakeConfig ?? null);
+        logger.info({ chatId, amount, tx: log.transactionHash }, "Stake alert sent");
       } catch (err) {
         logger.error({ err, chatId }, "Failed to send stake alert");
       }

@@ -48118,9 +48118,7 @@ var store3 = {};
 function loadStakeConfig() {
   try {
     if (!existsSync3(DATA_DIR3)) mkdirSync3(DATA_DIR3, { recursive: true });
-    if (existsSync3(FILE2)) {
-      store3 = JSON.parse(readFileSync3(FILE2, "utf8"));
-    }
+    if (existsSync3(FILE2)) store3 = JSON.parse(readFileSync3(FILE2, "utf8"));
   } catch (err) {
     logger.warn({ err }, "Failed to load stake config");
     store3 = {};
@@ -48153,7 +48151,33 @@ function addStakeAmount(chatId, amount) {
   save3();
   return store3[key];
 }
-function formatStakeAlert(amount, symbol, lockDays, config, autoDetected = false) {
+function buildCaption(amount, symbol, lockDays, config) {
+  const commaAmount = amount.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  const robotCount = Math.min(25, Math.max(5, Math.floor(amount / 1e4)));
+  const robots = "\u{1F916}".repeat(robotCount);
+  const lockLine = lockDays > 0 ? `${commaAmount} $${symbol} \xB7 ${lockDays}d lock` : `${commaAmount} $${symbol} staked`;
+  const lines = [
+    `\u{1F512} NEW STAKE \u{1F512}`,
+    ``,
+    robots,
+    ``,
+    lockLine
+  ];
+  if (config?.totalStaked) {
+    const totalFmt = config.totalStaked.toLocaleString("en-US", { maximumFractionDigits: 2 });
+    lines.push(`Total staked: ${totalFmt} $${symbol}`);
+    if (config.totalSupply > 0) {
+      const pct = (config.totalStaked / config.totalSupply * 100).toFixed(1);
+      lines.push(`${pct}% of supply locked`);
+    }
+  }
+  const linkParts = [];
+  if (config?.explorerUrl) linkParts.push(`View on Explorer`);
+  if (config?.stakeUrl) linkParts.push(`Stake $${symbol} \u2192`);
+  if (linkParts.length > 0) lines.push(``, linkParts.join(" \xB7 "));
+  return lines.join("\n");
+}
+function formatStakeAlert(amount, symbol, lockDays, config, _autoDetected = false) {
   const commaAmount = amount.toLocaleString("en-US", { maximumFractionDigits: 2 });
   const robotCount = Math.min(25, Math.max(5, Math.floor(amount / 1e4)));
   const robots = Array(robotCount).fill(e("robot")).join("");
@@ -48176,10 +48200,33 @@ function formatStakeAlert(amount, symbol, lockDays, config, autoDetected = false
   const linkParts = [];
   if (config?.explorerUrl) linkParts.push(`<a href="${config.explorerUrl}">View on Explorer</a>`);
   if (config?.stakeUrl) linkParts.push(`<a href="${config.stakeUrl}">Stake $${symbol} \u2192</a>`);
-  if (linkParts.length > 0) {
-    lines.push(``, `${e("rocket")} ${linkParts.join("  \xB7  ")}`);
-  }
+  if (linkParts.length > 0) lines.push(``, `${e("rocket")} ${linkParts.join("  \xB7  ")}`);
   return lines.join("\n");
+}
+async function sendStakeAlert(api, chatId, amount, lockDays, config) {
+  const symbol = config?.symbol ?? "TOKEN";
+  if (config?.bannerUrl) {
+    const caption = buildCaption(amount, symbol, lockDays, config);
+    const buttons = [];
+    const row = [];
+    if (config.explorerUrl) row.push({ text: "\u{1F50D} View on Explorer", url: config.explorerUrl });
+    if (config.stakeUrl) row.push({ text: `Stake $${symbol} \u2192`, url: config.stakeUrl });
+    if (row.length > 0) buttons.push(row);
+    try {
+      await api.sendPhoto(chatId, config.bannerUrl, {
+        caption,
+        reply_markup: buttons.length > 0 ? { inline_keyboard: buttons } : void 0
+      });
+      return;
+    } catch (err) {
+      logger.warn({ err, chatId }, "Failed to send stake banner photo, falling back to text");
+    }
+  }
+  const msg = formatStakeAlert(amount, symbol, lockDays, config);
+  await api.sendMessage(chatId, msg, {
+    parse_mode: "HTML",
+    link_preview_options: { is_disabled: true }
+  });
 }
 
 // src/bot/chainMonitor.ts
@@ -48268,14 +48315,10 @@ async function pollGroup(chatId, monitor) {
       if (stakeConfig) {
         stakeConfig.totalStaked = (stakeConfig.totalStaked ?? 0) + amount;
       }
-      const symbol = stakeConfig?.symbol ?? monitor.symbol ?? "TOKEN";
-      const msg = formatStakeAlert(amount, symbol, 0, stakeConfig ?? null, true);
+      if (stakeConfig) setStakeConfig(chatId, { totalStaked: stakeConfig.totalStaked });
       try {
-        await _api2.sendMessage(chatId, msg, {
-          parse_mode: "HTML",
-          link_preview_options: { is_disabled: true }
-        });
-        logger.info({ chatId, amount, symbol, tx: log.transactionHash }, "Stake alert sent");
+        await sendStakeAlert(_api2, chatId, amount, 0, stakeConfig ?? null);
+        logger.info({ chatId, amount, tx: log.transactionHash }, "Stake alert sent");
       } catch (err) {
         logger.error({ err, chatId }, "Failed to send stake alert");
       }
@@ -48785,6 +48828,7 @@ ${rec.text}`,
     if (kv["totalstaked"]) stakeUpdate.totalStaked = parseFloat(kv["totalstaked"].replace(/,/g, ""));
     if (kv["stakeurl"]) stakeUpdate.stakeUrl = kv["stakeurl"];
     if (kv["explorerurl"]) stakeUpdate.explorerUrl = kv["explorerurl"];
+    if (kv["bannerurl"]) stakeUpdate.bannerUrl = kv["bannerurl"];
     if (kv["chain"] || kv["stakingcontract"] || kv["tokencontract"]) {
       const existing = getStakeConfig(chatId);
       const chain = kv["chain"] ?? existing?.monitor?.chain ?? "";
@@ -48900,11 +48944,7 @@ Example: <code>/newstake 500000 180</code>`,
       return;
     }
     const updated = addStakeAmount(chatId, amount) ?? config;
-    const msg = formatStakeAlert(amount, config.symbol.toUpperCase(), lockDays, updated);
-    await ctx.reply(msg, {
-      parse_mode: "HTML",
-      link_preview_options: { is_disabled: true }
-    });
+    await sendStakeAlert(bot.api, chatId, amount, lockDays, updated);
   });
   bot.command("setupbuy", async (ctx) => {
     const userId = ctx.from?.id;
