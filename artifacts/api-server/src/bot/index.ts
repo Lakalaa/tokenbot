@@ -2,7 +2,7 @@ import { Bot, Context, GrammyError, HttpError } from "grammy";
 import { logger } from "../lib/logger.js";
 import { lookupToken } from "./dexscreener.js";
 import { e } from "./emoji.js";
-import { formatTokenMessage, formatStartMessage, formatHelpMessage } from "./formatter.js";
+import { formatTokenMessage, formatStartMessage, formatHelpMessage, buildTokenKeyboard } from "./formatter.js";
 import { loadLinks, getLinks, addLink, removeLink, clearLinks } from "./links.js";
 import { initScheduler, setAnnouncement, getAnnouncement, stopAnnouncement } from "./scheduler.js";
 import {
@@ -389,6 +389,28 @@ export function createBot(): Bot {
     await sendStakeAlert(bot.api, chatId, amount, lockDays, updated);
   });
 
+  bot.command("setemoji", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !(await isAdmin(ctx, userId))) {
+      await ctx.reply(`${e("warning")} Only admins can set the stake emoji.`, { parse_mode: "HTML" });
+      return;
+    }
+    const emoji = ctx.match?.trim() ?? "";
+    if (!emoji) {
+      await ctx.reply(
+        `${e("info")} <b>Usage:</b> <code>/setemoji 🔥</code>\n\nSets the emoji used in the stake alert row.\nDefault is 🤖`,
+        { parse_mode: "HTML" },
+      );
+      return;
+    }
+    const chatId = ctx.chat!.id;
+    setStakeConfig(chatId, { stakeEmoji: emoji });
+    await ctx.reply(
+      `${e("greenCircle")} Stake emoji set to: ${emoji}\n\nTest it with <code>/newstake 500000 180</code>`,
+      { parse_mode: "HTML" },
+    );
+  });
+
   // Admin sends image to group → replies to it with /setbanner → bot stores file_id
   bot.command("setbanner", async (ctx) => {
     const userId = ctx.from?.id;
@@ -626,10 +648,12 @@ export function createBot(): Bot {
     }
 
     const links = getLinks(ctx.chat.id);
-    const msg = formatTokenMessage(pairs, links);
+    const msg = formatTokenMessage(pairs);
+    const keyboard = buildTokenKeyboard(pairs, links);
     await ctx.reply(msg, {
       parse_mode: "HTML",
       link_preview_options: { is_disabled: true },
+      reply_markup: keyboard,
     });
   });
 

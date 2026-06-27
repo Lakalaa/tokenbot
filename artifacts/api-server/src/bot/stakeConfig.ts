@@ -1,7 +1,6 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { logger } from "../lib/logger.js";
-import { e } from "./emoji.js";
 import type { Api } from "grammy";
 
 const DATA_DIR = join(process.cwd(), "bot-data");
@@ -23,6 +22,7 @@ export interface StakeConfig {
   explorerUrl?: string;
   stakeUrl?: string;
   bannerUrl?: string;
+  stakeEmoji?: string;
   monitor?: StakeMonitorConfig;
 }
 
@@ -70,28 +70,27 @@ export function addStakeAmount(chatId: number, amount: number): StakeConfig | nu
   return store[key];
 }
 
-// Plain-text version (no HTML tags) used for photo captions (1024 char limit)
-function buildCaption(
-  amount: number,
-  symbol: string,
-  lockDays: number,
-  config: StakeConfig | null,
-): string {
+function buildStakeButtons(config: StakeConfig | null, symbol: string) {
+  const rows: Array<Array<{ text: string; url: string }>> = [];
+  const row: Array<{ text: string; url: string }> = [];
+  if (config?.explorerUrl) row.push({ text: "🔍 View on Explorer", url: config.explorerUrl });
+  if (config?.stakeUrl)    row.push({ text: `Stake $${symbol} →`, url: config.stakeUrl });
+  if (row.length) rows.push(row);
+  return rows.length ? { inline_keyboard: rows } : undefined;
+}
+
+// Caption for photo mode (plain text, 1024 char limit)
+function buildCaption(amount: number, symbol: string, lockDays: number, config: StakeConfig | null): string {
+  const emoji = config?.stakeEmoji ?? "🤖";
   const commaAmount = amount.toLocaleString("en-US", { maximumFractionDigits: 2 });
-  const robotCount = Math.min(25, Math.max(5, Math.floor(amount / 10_000)));
-  const robots = "🤖".repeat(robotCount);
+  const count = Math.min(25, Math.max(5, Math.floor(amount / 10_000)));
+  const row = emoji.repeat(count);
 
   const lockLine = lockDays > 0
     ? `${commaAmount} $${symbol} · ${lockDays}d lock`
     : `${commaAmount} $${symbol} staked`;
 
-  const lines: string[] = [
-    `🔒 NEW STAKE 🔒`,
-    ``,
-    robots,
-    ``,
-    lockLine,
-  ];
+  const lines = [`🔒 NEW STAKE 🔒`, ``, row, ``, lockLine];
 
   if (config?.totalStaked) {
     const totalFmt = config.totalStaked.toLocaleString("en-US", { maximumFractionDigits: 2 });
@@ -102,15 +101,10 @@ function buildCaption(
     }
   }
 
-  const linkParts: string[] = [];
-  if (config?.explorerUrl) linkParts.push(`View on Explorer`);
-  if (config?.stakeUrl) linkParts.push(`Stake $${symbol} →`);
-  if (linkParts.length > 0) lines.push(``, linkParts.join(" · "));
-
   return lines.join("\n");
 }
 
-// Rich HTML version used when there is no banner image (sendMessage, 4096 char limit)
+// Rich HTML for text-only mode
 export function formatStakeAlert(
   amount: number,
   symbol: string,
@@ -118,40 +112,30 @@ export function formatStakeAlert(
   config: StakeConfig | null,
   _autoDetected = false,
 ): string {
+  const emoji = config?.stakeEmoji ?? "🤖";
   const commaAmount = amount.toLocaleString("en-US", { maximumFractionDigits: 2 });
-  const robotCount = Math.min(25, Math.max(5, Math.floor(amount / 10_000)));
-  const robots = Array(robotCount).fill(e("robot")).join("");
+  const count = Math.min(25, Math.max(5, Math.floor(amount / 10_000)));
+  const row = emoji.repeat(count);
 
   const lockLine = lockDays > 0
-    ? `${e("boom")} <b>${commaAmount} $${symbol}</b> · ${lockDays}d lock`
-    : `${e("boom")} <b>${commaAmount} $${symbol}</b> staked`;
+    ? `<b>${commaAmount} $${symbol}</b> · ${lockDays}d lock`
+    : `<b>${commaAmount} $${symbol}</b> staked`;
 
-  const lines: string[] = [
-    `${e("lock")} <b>NEW STAKE</b> ${e("lock")}`,
-    ``,
-    robots,
-    ``,
-    lockLine,
-  ];
+  const lines = [`🔒 <b>NEW STAKE</b> 🔒`, ``, row, ``, lockLine];
 
   if (config?.totalStaked) {
     const totalFmt = config.totalStaked.toLocaleString("en-US", { maximumFractionDigits: 2 });
-    lines.push(`${e("gem")} Total staked: <b>${totalFmt} $${symbol}</b>`);
+    lines.push(`Total staked: <b>${totalFmt} $${symbol}</b>`);
     if (config.totalSupply > 0) {
       const pct = ((config.totalStaked / config.totalSupply) * 100).toFixed(1);
-      lines.push(`${e("crown")} <b>${pct}%</b> of supply locked`);
+      lines.push(`<b>${pct}%</b> of supply locked`);
     }
   }
-
-  const linkParts: string[] = [];
-  if (config?.explorerUrl) linkParts.push(`<a href="${config.explorerUrl}">View on Explorer</a>`);
-  if (config?.stakeUrl) linkParts.push(`<a href="${config.stakeUrl}">Stake $${symbol} →</a>`);
-  if (linkParts.length > 0) lines.push(``, `${e("rocket")} ${linkParts.join("  ·  ")}`);
 
   return lines.join("\n");
 }
 
-// Unified sender — uses photo+caption if bannerUrl is set, otherwise sends text
+// Main sender — photo+caption+buttons if banner set, else text+buttons
 export async function sendStakeAlert(
   api: Api,
   chatId: number,
@@ -160,31 +144,25 @@ export async function sendStakeAlert(
   config: StakeConfig | null,
 ): Promise<void> {
   const symbol = config?.symbol ?? "TOKEN";
+  const buttons = buildStakeButtons(config, symbol);
 
   if (config?.bannerUrl) {
     const caption = buildCaption(amount, symbol, lockDays, config);
-    // Build inline keyboard with links
-    const buttons: Array<Array<{ text: string; url: string }>> = [];
-    const row: Array<{ text: string; url: string }> = [];
-    if (config.explorerUrl) row.push({ text: "🔍 View on Explorer", url: config.explorerUrl });
-    if (config.stakeUrl) row.push({ text: `Stake $${symbol} →`, url: config.stakeUrl });
-    if (row.length > 0) buttons.push(row);
-
     try {
       await api.sendPhoto(chatId, config.bannerUrl, {
         caption,
-        reply_markup: buttons.length > 0 ? { inline_keyboard: buttons } : undefined,
+        reply_markup: buttons,
       });
       return;
     } catch (err) {
-      logger.warn({ err, chatId }, "Failed to send stake banner photo, falling back to text");
+      logger.warn({ err, chatId }, "Banner photo send failed, falling back to text");
     }
   }
 
-  // Fallback: rich HTML text message
-  const msg = formatStakeAlert(amount, symbol, lockDays, config);
-  await api.sendMessage(chatId, msg, {
+  const text = formatStakeAlert(amount, symbol, lockDays, config);
+  await api.sendMessage(chatId, text, {
     parse_mode: "HTML",
     link_preview_options: { is_disabled: true },
+    reply_markup: buttons,
   });
 }

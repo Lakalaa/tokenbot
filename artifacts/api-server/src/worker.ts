@@ -9,33 +9,23 @@ async function main() {
   await bot.api.deleteWebhook({ drop_pending_updates: true });
 
   // Register command menu so users see options when they type /
+  // Minimal public menu
   await bot.api.setMyCommands(
-    [
-      { command: "start", description: "Welcome message" },
-      { command: "help", description: "Show all commands" },
-    ],
-    { scope: { type: "all_private_chats" } },
+    [{ command: "start", description: "Start" }],
+    { scope: { type: "default" } },
   );
 
+  // Admin menu — only visible to group admins
   await bot.api.setMyCommands(
     [
-      { command: "help", description: "Show all commands" },
-      { command: "newstake", description: "Post a new stake alert — /newstake 500000 180" },
-      { command: "stakestatus", description: "Show stake config & monitor status" },
-      { command: "setbanner", description: "Set stake alert banner (reply to an image)" },
-      { command: "removebanner", description: "Remove stake alert banner" },
-      { command: "setupstake", description: "Configure staking alerts" },
-      { command: "stopmonitor", description: "Stop on-chain stake monitoring" },
-      { command: "setupbuy", description: "Configure buy alerts" },
-      { command: "stopbuy", description: "Stop buy alerts" },
-      { command: "buystatus", description: "Show buy alert status" },
-      { command: "setlink", description: "Add a custom link — /setlink Text https://url" },
-      { command: "listlinks", description: "List custom links" },
-      { command: "removelink", description: "Remove a link — /removelink 1" },
-      { command: "clearlinks", description: "Remove all custom links" },
-      { command: "setannounce", description: "Recurring message — /setannounce 30 Your text" },
-      { command: "showannounce", description: "Show active announcement" },
-      { command: "stopannounce", description: "Stop recurring announcement" },
+      { command: "help",        description: "Show all admin commands" },
+      { command: "newstake",    description: "Post stake alert — /newstake 500000 180" },
+      { command: "setupstake",  description: "Configure token, supply, links" },
+      { command: "setbanner",   description: "Reply to image to set stake banner" },
+      { command: "setemoji",    description: "Set stake emoji — /setemoji 🔥" },
+      { command: "setupbuy",    description: "Start buy alerts — /setupbuy contract:0x... chain:ethereum" },
+      { command: "setlink",     description: "Add button link — /setlink Text https://url" },
+      { command: "setannounce", description: "Recurring message — /setannounce 30 text" },
     ],
     { scope: { type: "all_chat_administrators" } },
   );

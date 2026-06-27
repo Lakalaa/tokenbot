@@ -21310,12 +21310,24 @@ function fmtChange(change) {
   const sign = change >= 0 ? "+" : "";
   return `${icon} ${sign}${change.toFixed(2)}%`;
 }
-function formatTokenMessage(pairs, customLinks = []) {
+function buildTokenKeyboard(pairs, customLinks = []) {
   const best = pairs[0];
-  const { baseToken, chainId, dexId, priceUsd, priceChange, liquidity, volume, marketCap, fdv, txns, url: url2 } = best;
+  const explorerFn = CHAIN_EXPLORER[best.chainId];
+  const explorerUrl = explorerFn ? explorerFn(best.baseToken.address) : null;
+  const rows = [];
+  const row1 = [];
+  if (best.url) row1.push({ text: "\u{1F4CA} Chart", url: best.url });
+  if (explorerUrl) row1.push({ text: "\u{1F50D} Explorer", url: explorerUrl });
+  if (row1.length) rows.push(row1);
+  for (const l of customLinks) {
+    rows.push([{ text: l.text, url: l.url }]);
+  }
+  return { inline_keyboard: rows };
+}
+function formatTokenMessage(pairs) {
+  const best = pairs[0];
+  const { baseToken, chainId, dexId, priceUsd, priceChange, liquidity, volume, marketCap, fdv, txns } = best;
   const chainLabel = CHAIN_LABELS[chainId] ?? chainId.toUpperCase();
-  const explorerFn = CHAIN_EXPLORER[chainId];
-  const explorerUrl = explorerFn ? explorerFn(baseToken.address) : null;
   const h24 = priceChange?.h24;
   const isBullish = (h24 ?? 0) >= 0;
   const header = isBullish ? `${e("rocket")} <b>${baseToken.name} (${baseToken.symbol})</b> ${e("fire")}` : `${e("chart")} <b>${baseToken.name} (${baseToken.symbol})</b>`;
@@ -21333,28 +21345,12 @@ function formatTokenMessage(pairs, customLinks = []) {
     `${e("chart")} <b>Volume 24h:</b> ${volume?.h24 ? fmt(volume.h24) : "N/A"}`,
     txns24 ? `   <b>Txns 24h:</b> ${e("greenCircle")} ${txns24.buys} buys  ${e("redCircle")} ${txns24.sells} sells` : ``,
     ``,
-    `${e("globe")} <b>Chain:</b> ${chainLabel}`,
-    `   <b>DEX:</b> ${dexId.charAt(0).toUpperCase() + dexId.slice(1)}`,
-    `   <b>CA:</b> <code>${baseToken.address}</code>`,
-    `   <b>Pair:</b> <code>${best.pairAddress}</code>`
+    `${e("globe")} <b>Chain:</b> ${chainLabel}  \xB7  <b>DEX:</b> ${dexId.charAt(0).toUpperCase() + dexId.slice(1)}`,
+    `${e("info")} <code>${baseToken.address}</code>`
   ];
   if (pairs.length > 1) {
-    const otherChains = [
-      ...new Set(pairs.slice(1).map((p) => CHAIN_LABELS[p.chainId] ?? p.chainId.toUpperCase()))
-    ];
-    if (otherChains.length > 0) {
-      lines.push(``, `${e("info")} <i>Also on: ${otherChains.slice(0, 4).join(", ")}</i>`);
-    }
-  }
-  const linkParts = [];
-  if (url2) linkParts.push(`<a href="${url2}">DexScreener</a>`);
-  if (explorerUrl) linkParts.push(`<a href="${explorerUrl}">Explorer</a>`);
-  if (linkParts.length > 0) {
-    lines.push(``, `${e("link")} ${linkParts.join("  \xB7  ")}`);
-  }
-  if (customLinks.length > 0) {
-    const custom = customLinks.map((l) => `<a href="${l.url}">${l.text}</a>`).join("  \xB7  ");
-    lines.push(``, `${e("rocket")} ${custom}`);
+    const others = [...new Set(pairs.slice(1).map((p) => CHAIN_LABELS[p.chainId] ?? p.chainId.toUpperCase()))];
+    if (others.length) lines.push(``, `<i>Also on: ${others.slice(0, 4).join(", ")}</i>`);
   }
   return lines.filter((l) => l !== ``).join("\n");
 }
@@ -21362,54 +21358,37 @@ function formatStartMessage() {
   return [
     `${e("rocket")} <b>Token Info Bot</b>`,
     ``,
-    `Send me any token contract address and I'll fetch live data from DexScreener across all chains.`,
+    `Paste any token contract address and I'll fetch live data from DexScreener.`,
     ``,
-    `${e("gem")} <b>Supported chains:</b> Solana, Ethereum, BNB Chain, Base, Arbitrum, Polygon, Avalanche, Optimism, TON, Sui, and more.`,
-    ``,
-    `${e("fire")} <b>What you get:</b>`,
-    `  \u2022 Live price in USD`,
-    `  \u2022 Price change (1h / 6h / 24h)`,
-    `  \u2022 Market cap &amp; liquidity`,
+    `${e("gem")} <b>What you get:</b>`,
+    `  \u2022 Live price, market cap, liquidity`,
     `  \u2022 24h volume &amp; transactions`,
-    `  \u2022 Contract address &amp; DEX info`,
-    `  \u2022 Links to DexScreener &amp; Explorer`,
+    `  \u2022 Chart &amp; Explorer buttons`,
     ``,
     `${e("lightning")} Just paste a contract address to get started!`
   ].join("\n");
 }
 function formatHelpMessage() {
   return [
-    `${e("info")} <b>How to use this bot</b>`,
+    `${e("info")} <b>Admin commands</b>`,
     ``,
-    `Paste any token contract address directly in the chat (works in groups too).`,
+    `${e("fire")} <b>Stake alerts:</b>`,
+    `  /setupstake \u2014 Configure token, supply, links`,
+    `  /newstake 500000 180 \u2014 Post a stake alert`,
+    `  /setbanner \u2014 Reply to an image to set banner`,
+    `  /setemoji \u{1F525} \u2014 Set the emoji for stake rows`,
     ``,
-    `<b>Examples:</b>`,
-    `  Solana: <code>So11111111111111111111111111111111111111112</code>`,
-    `  Ethereum: <code>0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2</code>`,
+    `${e("boom")} <b>Buy alerts:</b>`,
+    `  /setupbuy contract:0x... chain:ethereum`,
+    `  /stopbuy \u2014 Stop buy alerts`,
     ``,
-    `<b>Commands:</b>`,
-    `  /start \u2014 Welcome message`,
-    `  /help \u2014 This message`,
+    `${e("link")} <b>Custom link buttons:</b>`,
+    `  /setlink Text https://url`,
+    `  /removelink 1`,
     ``,
-    `${e("link")} <b>Custom link commands (admins only):</b>`,
-    `  /setlink Text https://url \u2014 Add a link to all token lookups`,
-    `  /listlinks \u2014 Show current links`,
-    `  /removelink 1 \u2014 Remove link by number`,
-    `  /clearlinks \u2014 Remove all links`,
-    ``,
-    `${e("lightning")} <b>Recurring announcements (admins only):</b>`,
-    `  /setannounce 30 Your message \u2014 Post every 30 minutes`,
-    `  /showannounce \u2014 Show active announcement`,
-    `  /stopannounce \u2014 Stop recurring message`,
-    ``,
-    `${e("fire")} <b>Staking alerts (admins only):</b>`,
-    `  /setupstake symbol:AR supply:1000000000 stakeurl:https://...`,
-    `  /newstake 500000 180 \u2014 Post a new stake alert`,
-    ``,
-    `${e("boom")} <b>Buy alerts (admins only):</b>`,
-    `  /setupbuy contract:0x... chain:ethereum \u2014 Start buy alerts`,
-    `  /buystatus \u2014 Show active buy alert config`,
-    `  /stopbuy \u2014 Stop buy alerts`
+    `${e("lightning")} <b>Announcements:</b>`,
+    `  /setannounce 30 Your message`,
+    `  /stopannounce`
   ].join("\n");
 }
 
@@ -21574,18 +21553,21 @@ function addStakeAmount(chatId, amount) {
   save3();
   return store3[key];
 }
+function buildStakeButtons(config, symbol) {
+  const rows = [];
+  const row = [];
+  if (config?.explorerUrl) row.push({ text: "\u{1F50D} View on Explorer", url: config.explorerUrl });
+  if (config?.stakeUrl) row.push({ text: `Stake $${symbol} \u2192`, url: config.stakeUrl });
+  if (row.length) rows.push(row);
+  return rows.length ? { inline_keyboard: rows } : void 0;
+}
 function buildCaption(amount, symbol, lockDays, config) {
+  const emoji = config?.stakeEmoji ?? "\u{1F916}";
   const commaAmount = amount.toLocaleString("en-US", { maximumFractionDigits: 2 });
-  const robotCount = Math.min(25, Math.max(5, Math.floor(amount / 1e4)));
-  const robots = "\u{1F916}".repeat(robotCount);
+  const count = Math.min(25, Math.max(5, Math.floor(amount / 1e4)));
+  const row = emoji.repeat(count);
   const lockLine = lockDays > 0 ? `${commaAmount} $${symbol} \xB7 ${lockDays}d lock` : `${commaAmount} $${symbol} staked`;
-  const lines = [
-    `\u{1F512} NEW STAKE \u{1F512}`,
-    ``,
-    robots,
-    ``,
-    lockLine
-  ];
+  const lines = [`\u{1F512} NEW STAKE \u{1F512}`, ``, row, ``, lockLine];
   if (config?.totalStaked) {
     const totalFmt = config.totalStaked.toLocaleString("en-US", { maximumFractionDigits: 2 });
     lines.push(`Total staked: ${totalFmt} $${symbol}`);
@@ -21594,61 +21576,45 @@ function buildCaption(amount, symbol, lockDays, config) {
       lines.push(`${pct}% of supply locked`);
     }
   }
-  const linkParts = [];
-  if (config?.explorerUrl) linkParts.push(`View on Explorer`);
-  if (config?.stakeUrl) linkParts.push(`Stake $${symbol} \u2192`);
-  if (linkParts.length > 0) lines.push(``, linkParts.join(" \xB7 "));
   return lines.join("\n");
 }
 function formatStakeAlert(amount, symbol, lockDays, config, _autoDetected = false) {
+  const emoji = config?.stakeEmoji ?? "\u{1F916}";
   const commaAmount = amount.toLocaleString("en-US", { maximumFractionDigits: 2 });
-  const robotCount = Math.min(25, Math.max(5, Math.floor(amount / 1e4)));
-  const robots = Array(robotCount).fill(e("robot")).join("");
-  const lockLine = lockDays > 0 ? `${e("boom")} <b>${commaAmount} $${symbol}</b> \xB7 ${lockDays}d lock` : `${e("boom")} <b>${commaAmount} $${symbol}</b> staked`;
-  const lines = [
-    `${e("lock")} <b>NEW STAKE</b> ${e("lock")}`,
-    ``,
-    robots,
-    ``,
-    lockLine
-  ];
+  const count = Math.min(25, Math.max(5, Math.floor(amount / 1e4)));
+  const row = emoji.repeat(count);
+  const lockLine = lockDays > 0 ? `<b>${commaAmount} $${symbol}</b> \xB7 ${lockDays}d lock` : `<b>${commaAmount} $${symbol}</b> staked`;
+  const lines = [`\u{1F512} <b>NEW STAKE</b> \u{1F512}`, ``, row, ``, lockLine];
   if (config?.totalStaked) {
     const totalFmt = config.totalStaked.toLocaleString("en-US", { maximumFractionDigits: 2 });
-    lines.push(`${e("gem")} Total staked: <b>${totalFmt} $${symbol}</b>`);
+    lines.push(`Total staked: <b>${totalFmt} $${symbol}</b>`);
     if (config.totalSupply > 0) {
       const pct = (config.totalStaked / config.totalSupply * 100).toFixed(1);
-      lines.push(`${e("crown")} <b>${pct}%</b> of supply locked`);
+      lines.push(`<b>${pct}%</b> of supply locked`);
     }
   }
-  const linkParts = [];
-  if (config?.explorerUrl) linkParts.push(`<a href="${config.explorerUrl}">View on Explorer</a>`);
-  if (config?.stakeUrl) linkParts.push(`<a href="${config.stakeUrl}">Stake $${symbol} \u2192</a>`);
-  if (linkParts.length > 0) lines.push(``, `${e("rocket")} ${linkParts.join("  \xB7  ")}`);
   return lines.join("\n");
 }
 async function sendStakeAlert(api, chatId, amount, lockDays, config) {
   const symbol = config?.symbol ?? "TOKEN";
+  const buttons = buildStakeButtons(config, symbol);
   if (config?.bannerUrl) {
     const caption = buildCaption(amount, symbol, lockDays, config);
-    const buttons = [];
-    const row = [];
-    if (config.explorerUrl) row.push({ text: "\u{1F50D} View on Explorer", url: config.explorerUrl });
-    if (config.stakeUrl) row.push({ text: `Stake $${symbol} \u2192`, url: config.stakeUrl });
-    if (row.length > 0) buttons.push(row);
     try {
       await api.sendPhoto(chatId, config.bannerUrl, {
         caption,
-        reply_markup: buttons.length > 0 ? { inline_keyboard: buttons } : void 0
+        reply_markup: buttons
       });
       return;
     } catch (err) {
-      logger.warn({ err, chatId }, "Failed to send stake banner photo, falling back to text");
+      logger.warn({ err, chatId }, "Banner photo send failed, falling back to text");
     }
   }
-  const msg = formatStakeAlert(amount, symbol, lockDays, config);
-  await api.sendMessage(chatId, msg, {
+  const text = formatStakeAlert(amount, symbol, lockDays, config);
+  await api.sendMessage(chatId, text, {
     parse_mode: "HTML",
-    link_preview_options: { is_disabled: true }
+    link_preview_options: { is_disabled: true },
+    reply_markup: buttons
   });
 }
 
@@ -22369,6 +22335,32 @@ Example: <code>/newstake 500000 180</code>`,
     const updated = addStakeAmount(chatId, amount) ?? config;
     await sendStakeAlert(bot.api, chatId, amount, lockDays, updated);
   });
+  bot.command("setemoji", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !await isAdmin(ctx, userId)) {
+      await ctx.reply(`${e("warning")} Only admins can set the stake emoji.`, { parse_mode: "HTML" });
+      return;
+    }
+    const emoji = ctx.match?.trim() ?? "";
+    if (!emoji) {
+      await ctx.reply(
+        `${e("info")} <b>Usage:</b> <code>/setemoji \u{1F525}</code>
+
+Sets the emoji used in the stake alert row.
+Default is \u{1F916}`,
+        { parse_mode: "HTML" }
+      );
+      return;
+    }
+    const chatId = ctx.chat.id;
+    setStakeConfig(chatId, { stakeEmoji: emoji });
+    await ctx.reply(
+      `${e("greenCircle")} Stake emoji set to: ${emoji}
+
+Test it with <code>/newstake 500000 180</code>`,
+      { parse_mode: "HTML" }
+    );
+  });
   bot.command("setbanner", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId || !await isAdmin(ctx, userId)) {
@@ -22590,10 +22582,12 @@ Paste a contract address like:
       return;
     }
     const links = getLinks(ctx.chat.id);
-    const msg = formatTokenMessage(pairs, links);
+    const msg = formatTokenMessage(pairs);
+    const keyboard = buildTokenKeyboard(pairs, links);
     await ctx.reply(msg, {
       parse_mode: "HTML",
-      link_preview_options: { is_disabled: true }
+      link_preview_options: { is_disabled: true },
+      reply_markup: keyboard
     });
   });
   bot.catch((err) => {
@@ -22616,31 +22610,19 @@ async function main() {
   const bot = createBot();
   await bot.api.deleteWebhook({ drop_pending_updates: true });
   await bot.api.setMyCommands(
-    [
-      { command: "start", description: "Welcome message" },
-      { command: "help", description: "Show all commands" }
-    ],
-    { scope: { type: "all_private_chats" } }
+    [{ command: "start", description: "Start" }],
+    { scope: { type: "default" } }
   );
   await bot.api.setMyCommands(
     [
-      { command: "help", description: "Show all commands" },
-      { command: "newstake", description: "Post a new stake alert \u2014 /newstake 500000 180" },
-      { command: "stakestatus", description: "Show stake config & monitor status" },
-      { command: "setbanner", description: "Set stake alert banner (reply to an image)" },
-      { command: "removebanner", description: "Remove stake alert banner" },
-      { command: "setupstake", description: "Configure staking alerts" },
-      { command: "stopmonitor", description: "Stop on-chain stake monitoring" },
-      { command: "setupbuy", description: "Configure buy alerts" },
-      { command: "stopbuy", description: "Stop buy alerts" },
-      { command: "buystatus", description: "Show buy alert status" },
-      { command: "setlink", description: "Add a custom link \u2014 /setlink Text https://url" },
-      { command: "listlinks", description: "List custom links" },
-      { command: "removelink", description: "Remove a link \u2014 /removelink 1" },
-      { command: "clearlinks", description: "Remove all custom links" },
-      { command: "setannounce", description: "Recurring message \u2014 /setannounce 30 Your text" },
-      { command: "showannounce", description: "Show active announcement" },
-      { command: "stopannounce", description: "Stop recurring announcement" }
+      { command: "help", description: "Show all admin commands" },
+      { command: "newstake", description: "Post stake alert \u2014 /newstake 500000 180" },
+      { command: "setupstake", description: "Configure token, supply, links" },
+      { command: "setbanner", description: "Reply to image to set stake banner" },
+      { command: "setemoji", description: "Set stake emoji \u2014 /setemoji \u{1F525}" },
+      { command: "setupbuy", description: "Start buy alerts \u2014 /setupbuy contract:0x... chain:ethereum" },
+      { command: "setlink", description: "Add button link \u2014 /setlink Text https://url" },
+      { command: "setannounce", description: "Recurring message \u2014 /setannounce 30 text" }
     ],
     { scope: { type: "all_chat_administrators" } }
   );
