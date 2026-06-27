@@ -22369,6 +22369,53 @@ Example: <code>/newstake 500000 180</code>`,
     const updated = addStakeAmount(chatId, amount) ?? config;
     await sendStakeAlert(bot.api, chatId, amount, lockDays, updated);
   });
+  bot.command("setbanner", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !await isAdmin(ctx, userId)) {
+      await ctx.reply(`${e("warning")} Only admins can set the banner.`, { parse_mode: "HTML" });
+      return;
+    }
+    const chatId = ctx.chat.id;
+    const replied = ctx.message?.reply_to_message;
+    const photo = replied?.photo ?? ctx.message?.photo;
+    if (!photo || photo.length === 0) {
+      await ctx.reply(
+        [
+          `${e("info")} <b>How to set your stake alert banner:</b>`,
+          ``,
+          `1. Send your banner image to this group`,
+          `2. Reply to that image with: <code>/setbanner</code>`,
+          ``,
+          `The bot will save the image and use it for all future stake alerts.`,
+          `Use /removebanner to clear it.`
+        ].join("\n"),
+        { parse_mode: "HTML" }
+      );
+      return;
+    }
+    const best = photo[photo.length - 1];
+    setStakeConfig(chatId, { bannerUrl: best.file_id });
+    await ctx.reply(
+      `${e("greenCircle")} <b>Banner saved!</b> It will appear in all future stake alerts.
+
+Test it with: <code>/newstake 500000 180</code>`,
+      { parse_mode: "HTML" }
+    );
+  });
+  bot.command("removebanner", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !await isAdmin(ctx, userId)) {
+      await ctx.reply(`${e("warning")} Only admins can remove the banner.`, { parse_mode: "HTML" });
+      return;
+    }
+    const chatId = ctx.chat.id;
+    const cfg = getStakeConfig(chatId);
+    if (cfg) {
+      cfg.bannerUrl = void 0;
+      setStakeConfig(chatId, cfg);
+    }
+    await ctx.reply(`${e("greenCircle")} Banner removed. Stake alerts will be text-only.`, { parse_mode: "HTML" });
+  });
   bot.command("setupbuy", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId || !await isAdmin(ctx, userId)) {
