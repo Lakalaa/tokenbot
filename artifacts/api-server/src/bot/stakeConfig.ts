@@ -79,7 +79,7 @@ export function formatStakeAlert(
 ): string {
   const commaAmount = amount.toLocaleString("en-US", { maximumFractionDigits: 2 });
   const robotCount = Math.min(25, Math.max(5, Math.floor(amount / 10000)));
-  const robots = Array(robotCount).fill(e("fire")).join("");
+  const robots = Array(robotCount).fill(e("robot")).join("");
 
   const lockLine = lockDays > 0
     ? `${e("boom")} <b>${commaAmount} $${symbol}</b> · ${lockDays}d lock`

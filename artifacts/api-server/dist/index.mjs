@@ -47825,7 +47825,8 @@ var CUSTOM_EMOJI = {
   lock: { id: "5296369303661067030", char: "\u{1F512}" },
   crown: { id: "5217822164362739968", char: "\u{1F451}" },
   party: { id: "5461151367559141950", char: "\u{1F389}" },
-  boom: { id: "5276032951342088188", char: "\u{1F4A5}" }
+  boom: { id: "5276032951342088188", char: "\u{1F4A5}" },
+  robot: { id: "5357419403325481099", char: "\u{1F916}" }
 };
 function e(key) {
   const { id, char } = CUSTOM_EMOJI[key];
@@ -48155,7 +48156,7 @@ function addStakeAmount(chatId, amount) {
 function formatStakeAlert(amount, symbol, lockDays, config, autoDetected = false) {
   const commaAmount = amount.toLocaleString("en-US", { maximumFractionDigits: 2 });
   const robotCount = Math.min(25, Math.max(5, Math.floor(amount / 1e4)));
-  const robots = Array(robotCount).fill(e("fire")).join("");
+  const robots = Array(robotCount).fill(e("robot")).join("");
   const lockLine = lockDays > 0 ? `${e("boom")} <b>${commaAmount} $${symbol}</b> \xB7 ${lockDays}d lock` : `${e("boom")} <b>${commaAmount} $${symbol}</b> staked`;
   const lines = [
     `${e("lock")} <b>NEW STAKE</b> ${e("lock")}`,

@@ -16,7 +16,8 @@ export type EmojiKey =
   | "lock"
   | "crown"
   | "party"
-  | "boom";
+  | "boom"
+  | "robot";
 
 const CUSTOM_EMOJI: Record<EmojiKey, { id: string; char: string }> = {
   fire:        { id: "5424972470023104089", char: "🔥" },
@@ -37,6 +38,7 @@ const CUSTOM_EMOJI: Record<EmojiKey, { id: string; char: string }> = {
   crown:       { id: "5217822164362739968", char: "👑" },
   party:       { id: "5461151367559141950", char: "🎉" },
   boom:        { id: "5276032951342088188", char: "💥" },
+  robot:       { id: "5357419403325481099", char: "🤖" },
 };
 
 export function e(key: EmojiKey): string {
