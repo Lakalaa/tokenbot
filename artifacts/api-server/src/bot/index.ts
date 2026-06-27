@@ -21,6 +21,20 @@ import {
   isMonitoring,
   CHAIN_RPCS,
 } from "./chainMonitor.js";
+import {
+  loadBuyConfig,
+  getAllBuyConfigs,
+  getBuyConfig,
+  setBuyConfig,
+  deleteBuyConfig,
+} from "./buyConfig.js";
+import {
+  initBuyMonitor,
+  restoreBuyMonitors,
+  startBuyMonitoring,
+  stopBuyMonitoring,
+  isBuyMonitoring,
+} from "./buyMonitor.js";
 
 const ETH_ADDRESS_RE = /0x[a-fA-F0-9]{40}/;
 const SOL_ADDRESS_RE = /[1-9A-HJ-NP-Za-km-z]{32,44}/;
@@ -66,15 +80,22 @@ export function createBot(): Bot {
 
   loadLinks();
   loadStakeConfig();
+  loadBuyConfig();
 
   const bot = new Bot(token);
 
   initScheduler(bot.api);
   initChainMonitor(bot.api);
+  initBuyMonitor(bot.api);
 
   const saved = getAllStakeConfigs().filter((c) => c.config.monitor);
   if (saved.length > 0) {
     restoreMonitors(saved.map((c) => ({ chatId: c.chatId, monitor: c.config.monitor! })));
+  }
+
+  const savedBuys = getAllBuyConfigs().filter((c) => c.config.monitor);
+  if (savedBuys.length > 0) {
+    restoreBuyMonitors(savedBuys.map((c) => ({ chatId: c.chatId, monitor: c.config.monitor! })));
   }
 
   bot.command("start", async (ctx) => {
@@ -369,6 +390,146 @@ export function createBot(): Bot {
       parse_mode: "HTML",
       link_preview_options: { is_disabled: true },
     });
+  });
+
+  bot.command("setupbuy", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !(await isAdmin(ctx, userId))) {
+      await ctx.reply(`${e("warning")} Only admins can configure buy alerts.`, { parse_mode: "HTML" });
+      return;
+    }
+    const args = ctx.match?.trim() ?? "";
+    if (!args) {
+      const chains = Object.keys(CHAIN_RPCS).join(" | ");
+      await ctx.reply(
+        [
+          `${e("fire")} <b>Buy Alert Setup</b>`,
+          ``,
+          `<b>Usage:</b>`,
+          `<code>/setupbuy contract:0x... chain:ethereum</code>`,
+          ``,
+          `<b>Optional params:</b>`,
+          `  <code>minusd:50</code> — minimum USD to alert (default 10)`,
+          `  <code>charturl:https://...</code>`,
+          `  <code>buyurl:https://...</code>`,
+          `  <code>website:https://...</code>`,
+          ``,
+          `Supported chains: <code>${chains}</code>`,
+          ``,
+          `The bot fetches the pair address automatically from DexScreener.`,
+          `Stop with /stopbuy.`,
+        ].join("\n"),
+        { parse_mode: "HTML", link_preview_options: { is_disabled: true } },
+      );
+      return;
+    }
+
+    const kv = parseKV(args);
+    const contract = kv["contract"];
+    const chain = kv["chain"];
+
+    if (!contract || !chain) {
+      await ctx.reply(
+        `${e("warning")} Provide both <code>contract:</code> and <code>chain:</code>\n\nExample:\n<code>/setupbuy contract:0xABC chain:ethereum</code>`,
+        { parse_mode: "HTML" },
+      );
+      return;
+    }
+    if (!CHAIN_RPCS[chain]) {
+      await ctx.reply(
+        `${e("warning")} Unknown chain <b>${chain}</b>. Supported: ${Object.keys(CHAIN_RPCS).join(", ")}`,
+        { parse_mode: "HTML" },
+      );
+      return;
+    }
+
+    await ctx.replyWithChatAction("typing");
+
+    let pairs: Awaited<ReturnType<typeof lookupToken>>;
+    try {
+      pairs = await lookupToken(contract);
+    } catch {
+      await ctx.reply(`${e("warning")} Failed to reach DexScreener. Check the contract address and try again.`, { parse_mode: "HTML" });
+      return;
+    }
+
+    if (!pairs || pairs.length === 0) {
+      await ctx.reply(`${e("warning")} No token found for <code>${contract}</code> on DexScreener.`, { parse_mode: "HTML" });
+      return;
+    }
+
+    const pair = pairs.find((p) => p.chainId === chain) ?? pairs[0];
+    const chatId = ctx.chat!.id;
+
+    const monitor = {
+      chain,
+      tokenContract: contract,
+      pairAddress: pair.pairAddress,
+      symbol: pair.baseToken.symbol,
+      decimals: 18,
+      minUsd: kv["minusd"] ? parseFloat(kv["minusd"]) : 10,
+      chartUrl: kv["charturl"],
+      buyUrl: kv["buyurl"],
+      websiteUrl: kv["website"],
+    };
+
+    setBuyConfig(chatId, { monitor });
+    startBuyMonitoring(chatId, monitor);
+
+    await ctx.reply(
+      [
+        `${e("fire")} <b>Buy alerts enabled!</b>`,
+        ``,
+        `${e("gem")} Token: <b>$${monitor.symbol}</b>`,
+        `${e("globe")} Chain: <b>${chain.toUpperCase()}</b>`,
+        `${e("link")} Pair: <code>${pair.pairAddress}</code>`,
+        `${e("lightning")} Min alert: <b>$${monitor.minUsd}</b>`,
+        ``,
+        `The bot watches on-chain every 30s and posts here when a buy happens.`,
+        `Stop with /stopbuy.`,
+      ].join("\n"),
+      { parse_mode: "HTML", link_preview_options: { is_disabled: true } },
+    );
+  });
+
+  bot.command("stopbuy", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !(await isAdmin(ctx, userId))) {
+      await ctx.reply(`${e("warning")} Only admins can stop buy alerts.`, { parse_mode: "HTML" });
+      return;
+    }
+    const chatId = ctx.chat!.id;
+    if (!isBuyMonitoring(chatId)) {
+      await ctx.reply(`${e("info")} No buy alerts are running.`, { parse_mode: "HTML" });
+      return;
+    }
+    stopBuyMonitoring(chatId);
+    deleteBuyConfig(chatId);
+    await ctx.reply(`${e("greenCircle")} Buy alerts stopped.`, { parse_mode: "HTML" });
+  });
+
+  bot.command("buystatus", async (ctx) => {
+    const chatId = ctx.chat!.id;
+    const cfg = getBuyConfig(chatId);
+    const active = isBuyMonitoring(chatId);
+    if (!cfg?.monitor) {
+      await ctx.reply(`${e("info")} No buy alert configured. Use /setupbuy to set one up.`, { parse_mode: "HTML" });
+      return;
+    }
+    const m = cfg.monitor;
+    await ctx.reply(
+      [
+        `${e("fire")} <b>Buy Alert Status</b>`,
+        ``,
+        `Token: <b>$${m.symbol}</b>`,
+        `Chain: <b>${m.chain.toUpperCase()}</b>`,
+        `Contract: <code>${m.tokenContract}</code>`,
+        `Pair: <code>${m.pairAddress}</code>`,
+        `Min USD: <b>$${m.minUsd}</b>`,
+        `Status: ${active ? `${e("greenCircle")} <b>Active</b>` : `${e("redCircle")} Stopped`}`,
+      ].join("\n"),
+      { parse_mode: "HTML" },
+    );
   });
 
   bot.on("message:text", async (ctx) => {

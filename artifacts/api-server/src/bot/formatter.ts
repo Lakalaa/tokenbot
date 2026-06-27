@@ -167,6 +167,11 @@ export function formatHelpMessage(): string {
     ``,
     `${e("fire")} <b>Staking alerts (admins only):</b>`,
     `  /setupstake symbol:AR supply:1000000000 stakeurl:https://...`,
-    `  /newstake 500000 AR 180 — Post a new stake alert`,
+    `  /newstake 500000 180 — Post a new stake alert`,
+    ``,
+    `${e("boom")} <b>Buy alerts (admins only):</b>`,
+    `  /setupbuy contract:0x... chain:ethereum — Start buy alerts`,
+    `  /buystatus — Show active buy alert config`,
+    `  /stopbuy — Stop buy alerts`,
   ].join("\n");
 }

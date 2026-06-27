@@ -339,7 +339,7 @@ var require_common = __commonJS({
 var require_browser = __commonJS({
   "../../node_modules/.pnpm/debug@4.4.3/node_modules/debug/src/browser.js"(exports, module) {
     exports.formatArgs = formatArgs;
-    exports.save = save4;
+    exports.save = save5;
     exports.load = load;
     exports.useColors = useColors;
     exports.storage = localstorage();
@@ -466,7 +466,7 @@ var require_browser = __commonJS({
     }
     exports.log = console.debug || console.log || (() => {
     });
-    function save4(namespaces) {
+    function save5(namespaces) {
       try {
         if (namespaces) {
           exports.storage.setItem("debug", namespaces);
@@ -513,7 +513,7 @@ var require_node = __commonJS({
     exports.init = init;
     exports.log = log;
     exports.formatArgs = formatArgs;
-    exports.save = save4;
+    exports.save = save5;
     exports.load = load;
     exports.useColors = useColors;
     exports.destroy = util5.deprecate(
@@ -649,7 +649,7 @@ var require_node = __commonJS({
     function log(...args) {
       return process.stderr.write(util5.formatWithOptions(exports.inspectOpts, ...args) + "\n");
     }
-    function save4(namespaces) {
+    function save5(namespaces) {
       if (namespaces) {
         process.env.DEBUG = namespaces;
       } else {
@@ -18679,7 +18679,7 @@ var require_view = __commonJS({
     var dirname = path.dirname;
     var basename = path.basename;
     var extname = path.extname;
-    var join4 = path.join;
+    var join5 = path.join;
     var resolve = path.resolve;
     module.exports = View;
     function View(name, options) {
@@ -18741,12 +18741,12 @@ var require_view = __commonJS({
     };
     View.prototype.resolve = function resolve2(dir, file) {
       var ext = this.ext;
-      var path2 = join4(dir, file);
+      var path2 = join5(dir, file);
       var stat = tryStat(path2);
       if (stat && stat.isFile()) {
         return path2;
       }
-      path2 = join4(dir, basename(file, ext), "index" + ext);
+      path2 = join5(dir, basename(file, ext), "index" + ext);
       stat = tryStat(path2);
       if (stat && stat.isFile()) {
         return path2;
@@ -22451,7 +22451,7 @@ var require_send = __commonJS({
     var Stream = __require("stream");
     var util5 = __require("util");
     var extname = path.extname;
-    var join4 = path.join;
+    var join5 = path.join;
     var normalize = path.normalize;
     var resolve = path.resolve;
     var sep = path.sep;
@@ -22623,7 +22623,7 @@ var require_send = __commonJS({
           return res;
         }
         parts = path2.split(sep);
-        path2 = normalize(join4(root, path2));
+        path2 = normalize(join5(root, path2));
       } else {
         if (UP_PATH_REGEXP.test(path2)) {
           debug('malicious path "%s"', path2);
@@ -22756,7 +22756,7 @@ var require_send = __commonJS({
           if (err) return self2.onStatError(err);
           return self2.error(404);
         }
-        var p = join4(path2, self2._index[i]);
+        var p = join5(path2, self2._index[i]);
         debug('stat "%s"', p);
         fs.stat(p, function(err2, stat) {
           if (err2) return next(err2);
@@ -25880,7 +25880,7 @@ var require_thread_stream = __commonJS({
     var { version } = require_package();
     var { EventEmitter: EventEmitter2 } = __require("events");
     var { Worker } = __require("worker_threads");
-    var { join: join4 } = __require("path");
+    var { join: join5 } = __require("path");
     var { pathToFileURL } = __require("url");
     var { wait } = require_wait();
     var {
@@ -25916,7 +25916,7 @@ var require_thread_stream = __commonJS({
     function createWorker(stream4, opts) {
       const { filename, workerData } = opts;
       const bundlerOverrides = "__bundlerPathsOverrides" in globalThis ? globalThis.__bundlerPathsOverrides : {};
-      const toExecute = bundlerOverrides["thread-stream-worker"] || join4(__dirname, "lib", "worker.js");
+      const toExecute = bundlerOverrides["thread-stream-worker"] || join5(__dirname, "lib", "worker.js");
       const worker = new Worker(toExecute, {
         ...opts.workerOpts,
         trackUnmanagedFds: false,
@@ -26302,7 +26302,7 @@ var require_transport = __commonJS({
     "use strict";
     var { createRequire } = __require("module");
     var getCallers = require_caller();
-    var { join: join4, isAbsolute, sep } = __require("node:path");
+    var { join: join5, isAbsolute, sep } = __require("node:path");
     var sleep = require_atomic_sleep();
     var onExit = require_on_exit_leak_free();
     var ThreadStream = require_thread_stream();
@@ -26365,7 +26365,7 @@ var require_transport = __commonJS({
         throw new Error("only one of target or targets can be specified");
       }
       if (targets) {
-        target = bundlerOverrides["pino-worker"] || join4(__dirname, "worker.js");
+        target = bundlerOverrides["pino-worker"] || join5(__dirname, "worker.js");
         options.targets = targets.filter((dest) => dest.target).map((dest) => {
           return {
             ...dest,
@@ -26383,7 +26383,7 @@ var require_transport = __commonJS({
           });
         });
       } else if (pipeline) {
-        target = bundlerOverrides["pino-worker"] || join4(__dirname, "worker.js");
+        target = bundlerOverrides["pino-worker"] || join5(__dirname, "worker.js");
         options.pipelines = [pipeline.map((dest) => {
           return {
             ...dest,
@@ -26405,7 +26405,7 @@ var require_transport = __commonJS({
           return origin2;
         }
         if (origin2 === "pino/file") {
-          return join4(__dirname, "..", "file.js");
+          return join5(__dirname, "..", "file.js");
         }
         let fixTarget2;
         for (const filePath of callers) {
@@ -26462,7 +26462,7 @@ var require_tools = __commonJS({
     } else {
       asJsonChan = {
         hasSubscribers: false,
-        traceSync(fn, store4, thisArg, ...args) {
+        traceSync(fn, store5, thisArg, ...args) {
           return fn.call(thisArg, ...args);
         }
       };
@@ -26532,8 +26532,8 @@ var require_tools = __commonJS({
       if (asJsonChan.hasSubscribers === false) {
         return _asJson.call(this, obj, msg, num, time);
       }
-      const store4 = { instance: this, arguments };
-      return asJsonChan.traceSync(_asJson, store4, this, obj, msg, num, time);
+      const store5 = { instance: this, arguments };
+      return asJsonChan.traceSync(_asJson, store5, this, obj, msg, num, time);
     }
     function _asJson(obj, msg, num, time) {
       const stringify2 = this[stringifySym];
@@ -27394,7 +27394,7 @@ var require_safe_stable_stringify = __commonJS({
               return circularValue;
             }
             let res = "";
-            let join4 = ",";
+            let join5 = ",";
             const originalIndentation = indentation;
             if (Array.isArray(value)) {
               if (value.length === 0) {
@@ -27408,7 +27408,7 @@ var require_safe_stable_stringify = __commonJS({
                 indentation += spacer;
                 res += `
 ${indentation}`;
-                join4 = `,
+                join5 = `,
 ${indentation}`;
               }
               const maximumValuesToStringify = Math.min(value.length, maximumBreadth);
@@ -27416,13 +27416,13 @@ ${indentation}`;
               for (; i < maximumValuesToStringify - 1; i++) {
                 const tmp2 = stringifyFnReplacer(String(i), value, stack, replacer, spacer, indentation);
                 res += tmp2 !== void 0 ? tmp2 : "null";
-                res += join4;
+                res += join5;
               }
               const tmp = stringifyFnReplacer(String(i), value, stack, replacer, spacer, indentation);
               res += tmp !== void 0 ? tmp : "null";
               if (value.length - 1 > maximumBreadth) {
                 const removedKeys = value.length - maximumBreadth - 1;
-                res += `${join4}"... ${getItemCount(removedKeys)} not stringified"`;
+                res += `${join5}"... ${getItemCount(removedKeys)} not stringified"`;
               }
               if (spacer !== "") {
                 res += `
@@ -27443,7 +27443,7 @@ ${originalIndentation}`;
             let separator = "";
             if (spacer !== "") {
               indentation += spacer;
-              join4 = `,
+              join5 = `,
 ${indentation}`;
               whitespace = " ";
             }
@@ -27457,13 +27457,13 @@ ${indentation}`;
               const tmp = stringifyFnReplacer(key2, value, stack, replacer, spacer, indentation);
               if (tmp !== void 0) {
                 res += `${separator}${strEscape(key2)}:${whitespace}${tmp}`;
-                separator = join4;
+                separator = join5;
               }
             }
             if (keyLength > maximumBreadth) {
               const removedKeys = keyLength - maximumBreadth;
               res += `${separator}"...":${whitespace}"${getItemCount(removedKeys)} not stringified"`;
-              separator = join4;
+              separator = join5;
             }
             if (spacer !== "" && separator.length > 1) {
               res = `
@@ -27504,7 +27504,7 @@ ${originalIndentation}`;
             }
             const originalIndentation = indentation;
             let res = "";
-            let join4 = ",";
+            let join5 = ",";
             if (Array.isArray(value)) {
               if (value.length === 0) {
                 return "[]";
@@ -27517,7 +27517,7 @@ ${originalIndentation}`;
                 indentation += spacer;
                 res += `
 ${indentation}`;
-                join4 = `,
+                join5 = `,
 ${indentation}`;
               }
               const maximumValuesToStringify = Math.min(value.length, maximumBreadth);
@@ -27525,13 +27525,13 @@ ${indentation}`;
               for (; i < maximumValuesToStringify - 1; i++) {
                 const tmp2 = stringifyArrayReplacer(String(i), value[i], stack, replacer, spacer, indentation);
                 res += tmp2 !== void 0 ? tmp2 : "null";
-                res += join4;
+                res += join5;
               }
               const tmp = stringifyArrayReplacer(String(i), value[i], stack, replacer, spacer, indentation);
               res += tmp !== void 0 ? tmp : "null";
               if (value.length - 1 > maximumBreadth) {
                 const removedKeys = value.length - maximumBreadth - 1;
-                res += `${join4}"... ${getItemCount(removedKeys)} not stringified"`;
+                res += `${join5}"... ${getItemCount(removedKeys)} not stringified"`;
               }
               if (spacer !== "") {
                 res += `
@@ -27544,7 +27544,7 @@ ${originalIndentation}`;
             let whitespace = "";
             if (spacer !== "") {
               indentation += spacer;
-              join4 = `,
+              join5 = `,
 ${indentation}`;
               whitespace = " ";
             }
@@ -27553,7 +27553,7 @@ ${indentation}`;
               const tmp = stringifyArrayReplacer(key2, value[key2], stack, replacer, spacer, indentation);
               if (tmp !== void 0) {
                 res += `${separator}${strEscape(key2)}:${whitespace}${tmp}`;
-                separator = join4;
+                separator = join5;
               }
             }
             if (spacer !== "" && separator.length > 1) {
@@ -27611,20 +27611,20 @@ ${originalIndentation}`;
               indentation += spacer;
               let res2 = `
 ${indentation}`;
-              const join5 = `,
+              const join6 = `,
 ${indentation}`;
               const maximumValuesToStringify = Math.min(value.length, maximumBreadth);
               let i = 0;
               for (; i < maximumValuesToStringify - 1; i++) {
                 const tmp2 = stringifyIndent(String(i), value[i], stack, spacer, indentation);
                 res2 += tmp2 !== void 0 ? tmp2 : "null";
-                res2 += join5;
+                res2 += join6;
               }
               const tmp = stringifyIndent(String(i), value[i], stack, spacer, indentation);
               res2 += tmp !== void 0 ? tmp : "null";
               if (value.length - 1 > maximumBreadth) {
                 const removedKeys = value.length - maximumBreadth - 1;
-                res2 += `${join5}"... ${getItemCount(removedKeys)} not stringified"`;
+                res2 += `${join6}"... ${getItemCount(removedKeys)} not stringified"`;
               }
               res2 += `
 ${originalIndentation}`;
@@ -27640,16 +27640,16 @@ ${originalIndentation}`;
               return '"[Object]"';
             }
             indentation += spacer;
-            const join4 = `,
+            const join5 = `,
 ${indentation}`;
             let res = "";
             let separator = "";
             let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth);
             if (isTypedArrayWithEntries(value)) {
-              res += stringifyTypedArray(value, join4, maximumBreadth);
+              res += stringifyTypedArray(value, join5, maximumBreadth);
               keys = keys.slice(value.length);
               maximumPropertiesToStringify -= value.length;
-              separator = join4;
+              separator = join5;
             }
             if (deterministic) {
               keys = sort(keys, comparator);
@@ -27660,13 +27660,13 @@ ${indentation}`;
               const tmp = stringifyIndent(key2, value[key2], stack, spacer, indentation);
               if (tmp !== void 0) {
                 res += `${separator}${strEscape(key2)}: ${tmp}`;
-                separator = join4;
+                separator = join5;
               }
             }
             if (keyLength > maximumBreadth) {
               const removedKeys = keyLength - maximumBreadth;
               res += `${separator}"...": "${getItemCount(removedKeys)} not stringified"`;
-              separator = join4;
+              separator = join5;
             }
             if (separator !== "") {
               res = `
@@ -47980,7 +47980,12 @@ function formatHelpMessage() {
     ``,
     `${e("fire")} <b>Staking alerts (admins only):</b>`,
     `  /setupstake symbol:AR supply:1000000000 stakeurl:https://...`,
-    `  /newstake 500000 AR 180 \u2014 Post a new stake alert`
+    `  /newstake 500000 180 \u2014 Post a new stake alert`,
+    ``,
+    `${e("boom")} <b>Buy alerts (admins only):</b>`,
+    `  /setupbuy contract:0x... chain:ethereum \u2014 Start buy alerts`,
+    `  /buystatus \u2014 Show active buy alert config`,
+    `  /stopbuy \u2014 Stop buy alerts`
   ].join("\n");
 }
 
@@ -48302,6 +48307,267 @@ function restoreMonitors(configs) {
   }
 }
 
+// src/bot/buyConfig.ts
+import { readFileSync as readFileSync4, writeFileSync as writeFileSync4, existsSync as existsSync4, mkdirSync as mkdirSync4 } from "node:fs";
+import { join as join4 } from "node:path";
+var DATA_DIR4 = join4(process.cwd(), "bot-data");
+var FILE3 = join4(DATA_DIR4, "buy-config.json");
+var store4 = {};
+function loadBuyConfig() {
+  try {
+    if (!existsSync4(DATA_DIR4)) mkdirSync4(DATA_DIR4, { recursive: true });
+    if (existsSync4(FILE3)) store4 = JSON.parse(readFileSync4(FILE3, "utf8"));
+  } catch (err) {
+    logger.warn({ err }, "Failed to load buy config");
+    store4 = {};
+  }
+}
+function save4() {
+  try {
+    if (!existsSync4(DATA_DIR4)) mkdirSync4(DATA_DIR4, { recursive: true });
+    writeFileSync4(FILE3, JSON.stringify(store4, null, 2), "utf8");
+  } catch (err) {
+    logger.error({ err }, "Failed to save buy config");
+  }
+}
+function getBuyConfig(chatId) {
+  return store4[String(chatId)] ?? null;
+}
+function setBuyConfig(chatId, config) {
+  const key = String(chatId);
+  store4[key] = { ...store4[key], ...config };
+  save4();
+  return store4[key];
+}
+function getAllBuyConfigs() {
+  return Object.entries(store4).map(([k, v]) => ({ chatId: Number(k), config: v }));
+}
+function deleteBuyConfig(chatId) {
+  delete store4[String(chatId)];
+  save4();
+}
+
+// src/bot/buyFormatter.ts
+function fmtUsd(n) {
+  if (n >= 1e6) return `$${(n / 1e6).toFixed(2)}M`;
+  if (n >= 1e3) return `$${(n / 1e3).toFixed(2)}K`;
+  return `$${n.toFixed(2)}`;
+}
+function fmtPrice2(price) {
+  if (price < 1e-6) return `$${price.toExponential(4)}`;
+  if (price < 0.01) return `$${price.toFixed(8)}`;
+  if (price < 1) return `$${price.toFixed(6)}`;
+  return `$${price.toFixed(4)}`;
+}
+function fmtAmount(n) {
+  if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
+  return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+function fireRow(usdValue) {
+  let count;
+  let useWhale = false;
+  if (usdValue >= 1e4) {
+    count = 25;
+    useWhale = true;
+  } else if (usdValue >= 5e3) count = 20;
+  else if (usdValue >= 1e3) count = 15;
+  else if (usdValue >= 500) count = 10;
+  else if (usdValue >= 200) count = 7;
+  else if (usdValue >= 50) count = 5;
+  else count = 3;
+  const fires = Array(count).fill(e("fire")).join("");
+  return useWhale ? `${e("crown")} ${fires} ${e("crown")}` : fires;
+}
+function formatBuyAlert(amountTokens, usdValue, priceUsd, marketCap, change24h, buyer, txHash, cfg) {
+  const row = fireRow(usdValue);
+  const changeStr = change24h != null ? ` ${change24h >= 0 ? e("up") : e("down")} ${change24h >= 0 ? "+" : ""}${change24h.toFixed(1)}%` : "";
+  const lines = [
+    row,
+    ``,
+    `${e("rocket")} <b>NEW BUY!</b> \u2014 <b>$${cfg.symbol}</b>`,
+    ``,
+    `${e("boom")} <b>${fmtUsd(usdValue)}</b>`,
+    `   ${fmtAmount(amountTokens)} $${cfg.symbol}`,
+    ``,
+    `${e("money")} Price: <b>${fmtPrice2(priceUsd)}</b>${changeStr}`,
+    marketCap ? `${e("gem")} Market Cap: <b>${fmtUsd(marketCap)}</b>` : "",
+    ``,
+    `${e("globe")} <a href="https://etherscan.io/address/${buyer}">Buyer</a>  \xB7  <a href="https://etherscan.io/tx/${txHash}">Tx</a>`
+  ];
+  const linkParts = [];
+  if (cfg.chartUrl) linkParts.push(`<a href="${cfg.chartUrl}">\u{1F4CA} Chart</a>`);
+  if (cfg.buyUrl) linkParts.push(`<a href="${cfg.buyUrl}">\u{1F6D2} Buy</a>`);
+  if (cfg.websiteUrl) linkParts.push(`<a href="${cfg.websiteUrl}">\u{1F310} Website</a>`);
+  if (linkParts.length > 0) lines.push(``, `${e("link")} ${linkParts.join("  \xB7  ")}`);
+  return lines.filter((l) => l !== "").join("\n");
+}
+
+// src/bot/buyMonitor.ts
+var TRANSFER_TOPIC2 = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+var POLL_INTERVAL_MS2 = 3e4;
+var MAX_BLOCKS_PER_POLL2 = 150;
+var DEXSCREENER_CACHE_TTL_MS = 5 * 60 * 1e3;
+var EXPLORER_TX = {
+  ethereum: (h) => `https://etherscan.io/tx/${h}`,
+  bsc: (h) => `https://bscscan.com/tx/${h}`,
+  base: (h) => `https://basescan.org/tx/${h}`,
+  arbitrum: (h) => `https://arbiscan.io/tx/${h}`,
+  polygon: (h) => `https://polygonscan.com/tx/${h}`,
+  optimism: (h) => `https://optimistic.etherscan.io/tx/${h}`,
+  avalanche: (h) => `https://snowtrace.io/tx/${h}`
+};
+var EXPLORER_ADDR = {
+  ethereum: (a) => `https://etherscan.io/address/${a}`,
+  bsc: (a) => `https://bscscan.com/address/${a}`,
+  base: (a) => `https://basescan.org/address/${a}`,
+  arbitrum: (a) => `https://arbiscan.io/address/${a}`,
+  polygon: (a) => `https://polygonscan.com/address/${a}`,
+  optimism: (a) => `https://optimistic.etherscan.io/address/${a}`,
+  avalanche: (a) => `https://snowtrace.io/address/${a}`
+};
+var lastBlock2 = {};
+var timers3 = {};
+var priceCache = {};
+var seenTxs = {};
+var _api3 = null;
+function initBuyMonitor(api) {
+  _api3 = api;
+}
+async function rpc2(url2, method, params) {
+  const res = await axios_default.post(url2, { jsonrpc: "2.0", id: 1, method, params }, { timeout: 1e4 });
+  if (res.data.error) throw new Error(res.data.error.message);
+  return res.data.result;
+}
+function padAddress2(addr) {
+  return "0x" + addr.toLowerCase().replace("0x", "").padStart(64, "0");
+}
+function hexToTokenAmount(hex, decimals) {
+  const raw = BigInt(hex);
+  const div = BigInt(10) ** BigInt(decimals);
+  return Number(raw / div) + Number(raw % div) / 10 ** decimals;
+}
+function isSkippedAddress(addr) {
+  const a = addr.toLowerCase();
+  return a === "0x0000000000000000000000000000000000000000" || a === "0x000000000000000000000000000000000000dead" || a === "0x0000000000000000000000000000000000000001";
+}
+async function fetchPrice(tokenAddress, chain) {
+  const key = `${chain}:${tokenAddress.toLowerCase()}`;
+  const cached = priceCache[key];
+  if (cached && Date.now() - cached.ts < DEXSCREENER_CACHE_TTL_MS) return cached;
+  try {
+    const res = await axios_default.get(`https://api.dexscreener.com/latest/dex/tokens/${tokenAddress}`, { timeout: 8e3 });
+    const pairs = res.data?.pairs ?? [];
+    const match = pairs.find((p) => p.chainId === chain) ?? pairs[0];
+    if (!match) return null;
+    const entry = {
+      priceUsd: parseFloat(match.priceUsd ?? "0") || 0,
+      marketCap: match.marketCap ?? null,
+      change24h: match.priceChange?.h24 ?? null,
+      ts: Date.now()
+    };
+    priceCache[key] = entry;
+    return entry;
+  } catch {
+    return cached ?? null;
+  }
+}
+async function pollBuys(chatId, cfg) {
+  if (!_api3) return;
+  const rpcUrl = CHAIN_RPCS[cfg.chain];
+  if (!rpcUrl) return;
+  const key = String(chatId);
+  if (!seenTxs[key]) seenTxs[key] = /* @__PURE__ */ new Set();
+  try {
+    const currentHex = await rpc2(rpcUrl, "eth_blockNumber", []);
+    const current = BigInt(currentHex);
+    if (!lastBlock2[key]) {
+      lastBlock2[key] = current;
+      return;
+    }
+    const from = lastBlock2[key] + 1n;
+    if (from > current) return;
+    const to = from + BigInt(MAX_BLOCKS_PER_POLL2) < current ? from + BigInt(MAX_BLOCKS_PER_POLL2) : current;
+    lastBlock2[key] = to;
+    const logs = await rpc2(rpcUrl, "eth_getLogs", [
+      {
+        fromBlock: "0x" + from.toString(16),
+        toBlock: "0x" + to.toString(16),
+        address: cfg.tokenContract.toLowerCase(),
+        topics: [
+          TRANSFER_TOPIC2,
+          padAddress2(cfg.pairAddress)
+          // from = pair
+        ]
+      }
+    ]);
+    if (!logs || logs.length === 0) return;
+    const price = await fetchPrice(cfg.tokenContract, cfg.chain);
+    if (!price || price.priceUsd === 0) return;
+    for (const log of logs) {
+      const txHash = log.transactionHash;
+      if (seenTxs[key].has(txHash)) continue;
+      seenTxs[key].add(txHash);
+      if (seenTxs[key].size > 500) {
+        const arr = Array.from(seenTxs[key]);
+        seenTxs[key] = new Set(arr.slice(-250));
+      }
+      const toAddr = "0x" + log.topics[2]?.slice(26);
+      if (!toAddr || isSkippedAddress(toAddr)) continue;
+      if (toAddr.toLowerCase() === cfg.pairAddress.toLowerCase()) continue;
+      if (toAddr.toLowerCase() === cfg.tokenContract.toLowerCase()) continue;
+      const amountTokens = hexToTokenAmount(log.data, cfg.decimals);
+      const usdValue = amountTokens * price.priceUsd;
+      if (usdValue < cfg.minUsd) continue;
+      const explorerTx = (EXPLORER_TX[cfg.chain] ?? EXPLORER_TX.ethereum)(txHash);
+      const explorerAddr = (EXPLORER_ADDR[cfg.chain] ?? EXPLORER_ADDR.ethereum)(toAddr);
+      const msg = formatBuyAlert(
+        amountTokens,
+        usdValue,
+        price.priceUsd,
+        price.marketCap,
+        price.change24h,
+        explorerAddr,
+        explorerTx,
+        cfg
+      );
+      try {
+        await _api3.sendMessage(chatId, msg, {
+          parse_mode: "HTML",
+          link_preview_options: { is_disabled: true }
+        });
+        logger.info({ chatId, usdValue, txHash }, "Buy alert sent");
+      } catch (err) {
+        logger.error({ err, chatId }, "Failed to send buy alert");
+      }
+    }
+  } catch (err) {
+    logger.warn({ err, chatId }, "Buy monitor poll error");
+  }
+}
+function startBuyMonitoring(chatId, cfg) {
+  const key = String(chatId);
+  if (timers3[key]) clearInterval(timers3[key]);
+  delete lastBlock2[key];
+  timers3[key] = setInterval(() => pollBuys(chatId, cfg), POLL_INTERVAL_MS2);
+  logger.info({ chatId, chain: cfg.chain, pair: cfg.pairAddress }, "Buy monitoring started");
+}
+function stopBuyMonitoring(chatId) {
+  const key = String(chatId);
+  if (timers3[key]) {
+    clearInterval(timers3[key]);
+    delete timers3[key];
+  }
+  delete lastBlock2[key];
+}
+function isBuyMonitoring(chatId) {
+  return !!timers3[String(chatId)];
+}
+function restoreBuyMonitors(configs) {
+  for (const { chatId, monitor } of configs) startBuyMonitoring(chatId, monitor);
+}
+
 // src/bot/index.ts
 var ETH_ADDRESS_RE = /0x[a-fA-F0-9]{40}/;
 var SOL_ADDRESS_RE = /[1-9A-HJ-NP-Za-km-z]{32,44}/;
@@ -48342,12 +48608,18 @@ function createBot() {
   }
   loadLinks();
   loadStakeConfig();
+  loadBuyConfig();
   const bot = new Bot(token);
   initScheduler(bot.api);
   initChainMonitor(bot.api);
+  initBuyMonitor(bot.api);
   const saved = getAllStakeConfigs().filter((c) => c.config.monitor);
   if (saved.length > 0) {
     restoreMonitors(saved.map((c) => ({ chatId: c.chatId, monitor: c.config.monitor })));
+  }
+  const savedBuys = getAllBuyConfigs().filter((c) => c.config.monitor);
+  if (savedBuys.length > 0) {
+    restoreBuyMonitors(savedBuys.map((c) => ({ chatId: c.chatId, monitor: c.config.monitor })));
   }
   bot.command("start", async (ctx) => {
     await ctx.reply(formatStartMessage(), {
@@ -48632,6 +48904,137 @@ Example: <code>/newstake 500000 180</code>`,
       parse_mode: "HTML",
       link_preview_options: { is_disabled: true }
     });
+  });
+  bot.command("setupbuy", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !await isAdmin(ctx, userId)) {
+      await ctx.reply(`${e("warning")} Only admins can configure buy alerts.`, { parse_mode: "HTML" });
+      return;
+    }
+    const args = ctx.match?.trim() ?? "";
+    if (!args) {
+      const chains = Object.keys(CHAIN_RPCS).join(" | ");
+      await ctx.reply(
+        [
+          `${e("fire")} <b>Buy Alert Setup</b>`,
+          ``,
+          `<b>Usage:</b>`,
+          `<code>/setupbuy contract:0x... chain:ethereum</code>`,
+          ``,
+          `<b>Optional params:</b>`,
+          `  <code>minusd:50</code> \u2014 minimum USD to alert (default 10)`,
+          `  <code>charturl:https://...</code>`,
+          `  <code>buyurl:https://...</code>`,
+          `  <code>website:https://...</code>`,
+          ``,
+          `Supported chains: <code>${chains}</code>`,
+          ``,
+          `The bot fetches the pair address automatically from DexScreener.`,
+          `Stop with /stopbuy.`
+        ].join("\n"),
+        { parse_mode: "HTML", link_preview_options: { is_disabled: true } }
+      );
+      return;
+    }
+    const kv = parseKV(args);
+    const contract = kv["contract"];
+    const chain = kv["chain"];
+    if (!contract || !chain) {
+      await ctx.reply(
+        `${e("warning")} Provide both <code>contract:</code> and <code>chain:</code>
+
+Example:
+<code>/setupbuy contract:0xABC chain:ethereum</code>`,
+        { parse_mode: "HTML" }
+      );
+      return;
+    }
+    if (!CHAIN_RPCS[chain]) {
+      await ctx.reply(
+        `${e("warning")} Unknown chain <b>${chain}</b>. Supported: ${Object.keys(CHAIN_RPCS).join(", ")}`,
+        { parse_mode: "HTML" }
+      );
+      return;
+    }
+    await ctx.replyWithChatAction("typing");
+    let pairs;
+    try {
+      pairs = await lookupToken(contract);
+    } catch {
+      await ctx.reply(`${e("warning")} Failed to reach DexScreener. Check the contract address and try again.`, { parse_mode: "HTML" });
+      return;
+    }
+    if (!pairs || pairs.length === 0) {
+      await ctx.reply(`${e("warning")} No token found for <code>${contract}</code> on DexScreener.`, { parse_mode: "HTML" });
+      return;
+    }
+    const pair = pairs.find((p) => p.chainId === chain) ?? pairs[0];
+    const chatId = ctx.chat.id;
+    const monitor = {
+      chain,
+      tokenContract: contract,
+      pairAddress: pair.pairAddress,
+      symbol: pair.baseToken.symbol,
+      decimals: 18,
+      minUsd: kv["minusd"] ? parseFloat(kv["minusd"]) : 10,
+      chartUrl: kv["charturl"],
+      buyUrl: kv["buyurl"],
+      websiteUrl: kv["website"]
+    };
+    setBuyConfig(chatId, { monitor });
+    startBuyMonitoring(chatId, monitor);
+    await ctx.reply(
+      [
+        `${e("fire")} <b>Buy alerts enabled!</b>`,
+        ``,
+        `${e("gem")} Token: <b>$${monitor.symbol}</b>`,
+        `${e("globe")} Chain: <b>${chain.toUpperCase()}</b>`,
+        `${e("link")} Pair: <code>${pair.pairAddress}</code>`,
+        `${e("lightning")} Min alert: <b>$${monitor.minUsd}</b>`,
+        ``,
+        `The bot watches on-chain every 30s and posts here when a buy happens.`,
+        `Stop with /stopbuy.`
+      ].join("\n"),
+      { parse_mode: "HTML", link_preview_options: { is_disabled: true } }
+    );
+  });
+  bot.command("stopbuy", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !await isAdmin(ctx, userId)) {
+      await ctx.reply(`${e("warning")} Only admins can stop buy alerts.`, { parse_mode: "HTML" });
+      return;
+    }
+    const chatId = ctx.chat.id;
+    if (!isBuyMonitoring(chatId)) {
+      await ctx.reply(`${e("info")} No buy alerts are running.`, { parse_mode: "HTML" });
+      return;
+    }
+    stopBuyMonitoring(chatId);
+    deleteBuyConfig(chatId);
+    await ctx.reply(`${e("greenCircle")} Buy alerts stopped.`, { parse_mode: "HTML" });
+  });
+  bot.command("buystatus", async (ctx) => {
+    const chatId = ctx.chat.id;
+    const cfg = getBuyConfig(chatId);
+    const active = isBuyMonitoring(chatId);
+    if (!cfg?.monitor) {
+      await ctx.reply(`${e("info")} No buy alert configured. Use /setupbuy to set one up.`, { parse_mode: "HTML" });
+      return;
+    }
+    const m = cfg.monitor;
+    await ctx.reply(
+      [
+        `${e("fire")} <b>Buy Alert Status</b>`,
+        ``,
+        `Token: <b>$${m.symbol}</b>`,
+        `Chain: <b>${m.chain.toUpperCase()}</b>`,
+        `Contract: <code>${m.tokenContract}</code>`,
+        `Pair: <code>${m.pairAddress}</code>`,
+        `Min USD: <b>$${m.minUsd}</b>`,
+        `Status: ${active ? `${e("greenCircle")} <b>Active</b>` : `${e("redCircle")} Stopped`}`
+      ].join("\n"),
+      { parse_mode: "HTML" }
+    );
   });
   bot.on("message:text", async (ctx) => {
     const text = ctx.message.text;
