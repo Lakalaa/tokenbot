@@ -1183,7 +1183,7 @@ var require_atomic_sleep = __commonJS({
   "../../node_modules/.pnpm/atomic-sleep@1.0.0/node_modules/atomic-sleep/index.js"(exports, module) {
     "use strict";
     if (typeof SharedArrayBuffer !== "undefined" && typeof Atomics !== "undefined") {
-      let sleep = function(ms) {
+      let sleep2 = function(ms) {
         const valid = ms > 0 && ms < Infinity;
         if (valid === false) {
           if (typeof ms !== "number" && typeof ms !== "bigint") {
@@ -1194,9 +1194,9 @@ var require_atomic_sleep = __commonJS({
         Atomics.wait(nil, 0, 0, Number(ms));
       };
       const nil = new Int32Array(new SharedArrayBuffer(4));
-      module.exports = sleep;
+      module.exports = sleep2;
     } else {
-      let sleep = function(ms) {
+      let sleep2 = function(ms) {
         const valid = ms > 0 && ms < Infinity;
         if (valid === false) {
           if (typeof ms !== "number" && typeof ms !== "bigint") {
@@ -1208,7 +1208,7 @@ var require_atomic_sleep = __commonJS({
         while (target > Date.now()) {
         }
       };
-      module.exports = sleep;
+      module.exports = sleep2;
     }
   }
 });
@@ -1221,7 +1221,7 @@ var require_sonic_boom = __commonJS({
     var EventEmitter2 = __require("events");
     var inherits2 = __require("util").inherits;
     var path = __require("path");
-    var sleep = require_atomic_sleep();
+    var sleep2 = require_atomic_sleep();
     var assert = __require("assert");
     var BUSY_WRITE_TIMEOUT = 100;
     var kEmptyBuffer = Buffer.allocUnsafe(0);
@@ -1367,7 +1367,7 @@ var require_sonic_boom = __commonJS({
           if ((err.code === "EAGAIN" || err.code === "EBUSY") && this.retryEAGAIN(err, this._writingBuf.length, this._len - this._writingBuf.length)) {
             if (this.sync) {
               try {
-                sleep(BUSY_WRITE_TIMEOUT);
+                sleep2(BUSY_WRITE_TIMEOUT);
                 this.release(void 0, 0);
               } catch (err2) {
                 this.release(err2);
@@ -1680,7 +1680,7 @@ var require_sonic_boom = __commonJS({
           if (shouldRetry && !this.retryEAGAIN(err, buf.length, this._len - buf.length)) {
             throw err;
           }
-          sleep(BUSY_WRITE_TIMEOUT);
+          sleep2(BUSY_WRITE_TIMEOUT);
         }
       }
       try {
@@ -1717,7 +1717,7 @@ var require_sonic_boom = __commonJS({
           if (shouldRetry && !this.retryEAGAIN(err, buf.length, this._len - buf.length)) {
             throw err;
           }
-          sleep(BUSY_WRITE_TIMEOUT);
+          sleep2(BUSY_WRITE_TIMEOUT);
         }
       }
     }
@@ -2458,7 +2458,7 @@ var require_transport = __commonJS({
     var { createRequire } = __require("module");
     var getCallers = require_caller();
     var { join: join5, isAbsolute, sep } = __require("node:path");
-    var sleep = require_atomic_sleep();
+    var sleep2 = require_atomic_sleep();
     var onExit = require_on_exit_leak_free();
     var ThreadStream = require_thread_stream();
     function setupOnExit(stream4) {
@@ -2492,7 +2492,7 @@ var require_transport = __commonJS({
           return;
         }
         stream4.flushSync();
-        sleep(100);
+        sleep2(100);
         stream4.end();
       }
       return stream4;
@@ -22631,6 +22631,29 @@ Paste a contract address like:
 }
 
 // src/worker.ts
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+async function startPolling(bot) {
+  while (true) {
+    try {
+      await bot.start({
+        allowed_updates: ["message"],
+        onStart: (info) => {
+          logger.info({ username: info.username }, "Bot polling started");
+        }
+      });
+      break;
+    } catch (err) {
+      if (err?.error_code === 409) {
+        logger.warn("409 conflict \u2014 old instance still running, retrying in 15s...");
+        await sleep(15e3);
+        continue;
+      }
+      throw err;
+    }
+  }
+}
 async function main() {
   logger.info("Starting Telegram bot worker...");
   const bot = createBot();
@@ -22654,12 +22677,6 @@ async function main() {
     { scope: { type: "all_chat_administrators" } }
   );
   logger.info("Bot commands registered");
-  bot.start({
-    allowed_updates: ["message"],
-    onStart: (info) => {
-      logger.info({ username: info.username }, "Bot polling started");
-    }
-  });
   process.on("SIGTERM", async () => {
     logger.info("SIGTERM \u2014 stopping bot");
     await bot.stop();
@@ -22670,6 +22687,7 @@ async function main() {
     await bot.stop();
     process.exit(0);
   });
+  await startPolling(bot);
 }
 main().catch((err) => {
   logger.error({ err }, "Worker failed to start");

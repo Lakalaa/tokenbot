@@ -1,5 +1,31 @@
 import { createBot } from "./bot/index.js";
 import { logger } from "./lib/logger.js";
+import type { Bot } from "grammy";
+
+function sleep(ms: number) {
+  return new Promise<void>((r) => setTimeout(r, ms));
+}
+
+async function startPolling(bot: Bot) {
+  while (true) {
+    try {
+      await bot.start({
+        allowed_updates: ["message"],
+        onStart: (info) => {
+          logger.info({ username: info.username }, "Bot polling started");
+        },
+      });
+      break; // clean stop via bot.stop()
+    } catch (err: any) {
+      if (err?.error_code === 409) {
+        logger.warn("409 conflict — old instance still running, retrying in 15s...");
+        await sleep(15_000);
+        continue;
+      }
+      throw err;
+    }
+  }
+}
 
 async function main() {
   logger.info("Starting Telegram bot worker...");
@@ -33,13 +59,6 @@ async function main() {
 
   logger.info("Bot commands registered");
 
-  bot.start({
-    allowed_updates: ["message"],
-    onStart: (info) => {
-      logger.info({ username: info.username }, "Bot polling started");
-    },
-  });
-
   process.on("SIGTERM", async () => {
     logger.info("SIGTERM — stopping bot");
     await bot.stop();
@@ -51,6 +70,8 @@ async function main() {
     await bot.stop();
     process.exit(0);
   });
+
+  await startPolling(bot);
 }
 
 main().catch((err) => {
