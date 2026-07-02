@@ -22634,6 +22634,8 @@ Paste a contract address like:
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
+var botInstance = null;
+var restartTimer = null;
 async function startPolling(bot) {
   while (true) {
     try {
@@ -22646,8 +22648,8 @@ async function startPolling(bot) {
       break;
     } catch (err) {
       if (err?.error_code === 409) {
-        logger.warn("409 conflict \u2014 old instance still running, retrying in 15s...");
-        await sleep(15e3);
+        logger.warn({ error_code: err.error_code }, "409 conflict \u2014 retrying in 20s");
+        await sleep(2e4);
         continue;
       }
       throw err;
@@ -22657,6 +22659,26 @@ async function startPolling(bot) {
 async function main() {
   logger.info("Starting Telegram bot worker...");
   const bot = createBot();
+  botInstance = bot;
+  process.on("unhandledRejection", (reason) => {
+    if (reason?.error_code === 409) {
+      logger.warn("409 via unhandledRejection \u2014 will retry in 20s");
+      if (!restartTimer) {
+        restartTimer = setTimeout(async () => {
+          restartTimer = null;
+          try {
+            await startPolling(bot);
+          } catch (e2) {
+            logger.error({ err: e2 }, "Bot failed after 409 retry");
+            process.exit(1);
+          }
+        }, 2e4);
+      }
+      return;
+    }
+    logger.error({ reason }, "Unhandled rejection");
+    process.exit(1);
+  });
   await bot.api.deleteWebhook({ drop_pending_updates: true });
   await bot.api.setMyCommands(
     [{ command: "start", description: "Start" }],
@@ -22677,13 +22699,17 @@ async function main() {
     { scope: { type: "all_chat_administrators" } }
   );
   logger.info("Bot commands registered");
+  logger.info("Waiting 10s for previous instance to clear...");
+  await sleep(1e4);
   process.on("SIGTERM", async () => {
     logger.info("SIGTERM \u2014 stopping bot");
+    if (restartTimer) clearTimeout(restartTimer);
     await bot.stop();
     process.exit(0);
   });
   process.on("SIGINT", async () => {
     logger.info("SIGINT \u2014 stopping bot");
+    if (restartTimer) clearTimeout(restartTimer);
     await bot.stop();
     process.exit(0);
   });
